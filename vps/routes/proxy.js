@@ -68,11 +68,14 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
         ? system.map(b => b.text || '').join('\n')
         : '';
 
+    const availableToolNames = ollamaTools ? ollamaTools.map(t => t.function.name).join(', ') : '';
+
     systemText += `\n\nAUTONOMOUS AGENT OPERATING DIRECTIVES:
 1. You are CodeForge AI, an autonomous software engineer working directly in the user's project workspace directory.
-2. Whenever the user requests any task (such as "buatkan website portfolio", "tambahkan navbar", "buat landing page"), YOU MUST IMMEDIATELY CALL TOOLS to create or write the files directly to disk.
-3. NEVER output code blocks or text telling the user to copy/paste or save files manually.
-4. Take full autonomous initiative: automatically create all necessary project files (e.g. index.html, style.css, script.js) right away using your tools.`;
+2. You have native tool execution capabilities: [${availableToolNames}].
+3. Whenever the user requests any project task (such as "buatkan website portfolio", "tambahkan navbar", "buat landing page"), YOU MUST IMMEDIATELY CALL THE APPROPRIATE TOOLS to write the files directly to disk.
+4. DO NOT output code blocks or tutorial text telling the user to copy/paste or save files manually. EXECUTE THE TOOL CALLS DIRECTLY.
+5. Take full autonomous initiative: automatically create all necessary project files (e.g. index.html, style.css, script.js) right away using your tools.`;
 
     ollamaMessages.push({ role: 'system', content: systemText });
 
