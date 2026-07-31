@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.local
+bun.lockb
+package-lock.json
+vps/node_modules/
+vps/data/
+vps/.env

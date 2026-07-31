@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  # ─── Ollama (AI Model Server) ──────────────
+  ollama:
+    image: ollama/ollama:latest
+    container_name: codeforge-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  # ─── CodeForge Backend (API + Dashboard) ───
+  backend:
+    build: .
+    container_name: codeforge-backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET:-codeforge-change-this-secret}
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - DEFAULT_MODEL=${DEFAULT_MODEL:-qwen2.5-coder:14b}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+    volumes:
+      - backend_data:/app/data
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  backend_data:
