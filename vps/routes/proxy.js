@@ -74,20 +74,27 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
 
     const availableToolNames = ollamaTools ? ollamaTools.map(t => t.function.name).join(', ') : '';
 
-    // PREPEND agent directive (at the start, so model sees it first)
+    // Extract working directory from CLI system prompt
+    const cwdMatch = originalSystem.match(/Working directory:\s*(.+)/i);
+    const workingDir = cwdMatch ? cwdMatch[1].trim().replace(/\\/g, '/') : '';
+    console.log('[Proxy] Detected working directory:', workingDir || '(not found)');
+
+    // PREPEND agent directive with REAL working directory
+    const examplePath = workingDir ? `${workingDir}/index.html` : '/absolute/path/to/file.html';
     const agentDirective = `CRITICAL INSTRUCTION — YOU ARE AN AUTONOMOUS CODING AGENT:
-You have tools: [${availableToolNames}]. You MUST respond with a JSON tool call to execute tasks. NEVER give text tutorials or instructions.
+You have tools: [${availableToolNames}]. You MUST respond ONLY with JSON tool calls. NEVER give text tutorials.
+${workingDir ? `The user's working directory is: ${workingDir}` : ''}
 
 When asked to create files, respond ONLY with a JSON tool call like this:
 \`\`\`json
-{"name": "Write", "arguments": {"file_path": "/absolute/path/to/file.html", "content": "<file content here>"}}
+{"name": "Write", "arguments": {"file_path": "${examplePath}", "content": "<file content here>"}}
 \`\`\`
 
 Rules:
-- ALWAYS use the Write tool to create files directly. NEVER tell the user to copy/paste code.
-- Use absolute file paths based on the user's working directory.
-- If multiple files are needed, output multiple sequential JSON tool calls.
-- NEVER say "saya tidak bisa" or "saya tidak memiliki kemampuan". You CAN and MUST create files directly.
+- ALWAYS use the Write tool to create files. NEVER output tutorial text.
+- Use ABSOLUTE file paths starting with the working directory${workingDir ? ` (${workingDir})` : ''}.
+- NEVER use placeholder paths like "/path/to/your/..." — use the REAL working directory.
+- NEVER say "saya tidak bisa". You CAN and MUST create files directly.
 
 `;
 
@@ -380,7 +387,21 @@ Rules:
 
       if (parsedToolCalls.length > 0) {
         // Successfully parsed tool calls from text!
-        contentBlocks.push({ type: 'text', text: `Executing ${parsedToolCalls.length} tool call(s)...` });
+        // Fix placeholder paths in tool call inputs
+        for (const tc of parsedToolCalls) {
+          if (tc.input && tc.input.file_path && workingDir) {
+            const fp = tc.input.file_path;
+            // Replace placeholder paths with real working directory
+            if (fp.startsWith('/path/to/') || fp.startsWith('/absolute/path') || fp.includes('/your/')) {
+              // Extract just the filename from the placeholder path
+              const fileName = fp.split('/').pop();
+              tc.input.file_path = `${workingDir}/${fileName}`;
+              console.log('[Proxy Fallback] Fixed path:', fp, '->', tc.input.file_path);
+            }
+          }
+        }
+
+        contentBlocks.push({ type: 'text', text: `Creating files...` });
 
         for (const tc of parsedToolCalls) {
           contentBlocks.push({
