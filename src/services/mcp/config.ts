@@ -1060,13 +1060,13 @@ export function getMcpConfigByName(name: string): ScopedMcpServerConfig | null {
 }
 
 /**
- * Get Claude Code MCP configurations (excludes claude.ai servers from the
+ * GetCode Forge MCP configurations (excludes claude.ai servers from the
  * returned set — they're fetched separately and merged by callers).
  * This is fast: only local file reads; no awaited network calls on the
  * critical path. The optional extraDedupTargets promise (e.g. the in-flight
  * claude.ai connector fetch) is awaited only after loadAllPluginsCacheOnly() completes,
  * so the two overlap rather than serialize.
- * @returns Claude Code server configurations with appropriate scopes
+ * @returnsCode Forge server configurations with appropriate scopes
  */
 export async function getClaudeCodeMcpConfigs(
   dynamicServers: Record<string, ScopedMcpServerConfig> = {},
@@ -1511,8 +1511,8 @@ export function areMcpConfigsAllowedWithEnterpriseMcpConfig(
 /* eslint-disable @typescript-eslint/no-require-imports */
 const DEFAULT_DISABLED_BUILTIN = feature('CHICAGO_MCP')
   ? (
-      require('../../utils/computerUse/common.js') as typeof import('../../utils/computerUse/common.js')
-    ).COMPUTER_USE_MCP_SERVER_NAME
+    require('../../utils/computerUse/common.js') as typeof import('../../utils/computerUse/common.js')
+  ).COMPUTER_USE_MCP_SERVER_NAME
   : null
 /* eslint-enable @typescript-eslint/no-require-imports */
 

@@ -223,12 +223,22 @@ export function hasAnthropicApiKeyAuth(): boolean {
   return key !== null && source !== 'none'
 }
 
+import { getVPSCredentials } from './vpsAuthStorage.js'
+
 export function getAnthropicApiKeyWithSource(
   opts: { skipRetrievingKeyFromApiKeyHelper?: boolean } = {},
 ): {
   key: null | string
   source: ApiKeySource
 } {
+  const vpsCreds = getVPSCredentials();
+  if (vpsCreds && vpsCreds.token) {
+    return {
+      key: vpsCreds.token,
+      source: 'apiKey',
+    }
+  }
+
   // --bare: hermetic auth. Only ANTHROPIC_API_KEY env or apiKeyHelper from
   // the --settings flag. Never touches keychain, config file, or approval
   // lists. 3P (Bedrock/Vertex/Foundry) uses provider creds, not this path.

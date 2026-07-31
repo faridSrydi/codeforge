@@ -18,18 +18,25 @@ export function generateToken(user) {
 }
 
 /**
- * Middleware: Require valid JWT token
+ * Middleware: Require valid JWT token (supports Bearer token or x-api-key header)
  */
 export function requireAuth(req, res, next) {
+  let token = null;
   const authHeader = req.headers.authorization;
+  const apiKeyHeader = req.headers['x-api-key'];
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({
-      error: { type: 'authentication_error', message: 'Missing or invalid authorization header. Use: Bearer <token>' }
-    });
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.slice(7);
+  } else if (apiKeyHeader) {
+    token = apiKeyHeader.startsWith('Bearer ') ? apiKeyHeader.slice(7) : apiKeyHeader;
   }
 
-  const token = authHeader.slice(7);
+  if (!token) {
+    return res.status(401).json({
+      type: 'error',
+      error: { type: 'authentication_error', message: 'Missing or invalid authorization header.' }
+    });
+  }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -37,6 +44,7 @@ export function requireAuth(req, res, next) {
     next();
   } catch (err) {
     return res.status(401).json({
+      type: 'error',
       error: { type: 'authentication_error', message: 'Invalid or expired token. Please login again.' }
     });
   }
@@ -48,6 +56,7 @@ export function requireAuth(req, res, next) {
 export function requireAdmin(req, res, next) {
   if (!req.user || req.user.role !== 'admin') {
     return res.status(403).json({
+      type: 'error',
       error: { type: 'permission_error', message: 'Admin access required.' }
     });
   }

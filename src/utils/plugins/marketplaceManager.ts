@@ -1,5 +1,5 @@
 /**
- * Marketplace manager for Claude Code plugins
+ * Marketplace manager forCode Forge plugins
  *
  * This module provides functionality to:
  * - Manage known marketplace sources (URLs, GitHub repos, npm packages, local files)
@@ -311,7 +311,7 @@ export async function loadKnownMarketplacesConfigSafe(): Promise<KnownMarketplac
     return await loadKnownMarketplacesConfig()
   } catch {
     // Inner function already logged via logForDebugging. Don't logError here —
-    // corrupted user config isn't a Claude Code bug, shouldn't hit the error file.
+    // corrupted user config isn't aCode Forge bug, shouldn't hit the error file.
     return {}
   }
 }
@@ -1866,8 +1866,8 @@ export async function addMarketplaceSource(
     if (seedDir) {
       throw new Error(
         `Marketplace '${marketplace.name}' is seed-managed (${seedDir}). ` +
-          `To use a different source, ask your admin to update the seed, ` +
-          `or use a different marketplace name.`,
+        `To use a different source, ask your admin to update the seed, ` +
+        `or use a different marketplace name.`,
       )
     }
     logForDebugging(
@@ -1902,8 +1902,8 @@ export async function addMarketplaceSource(
       } else {
         logForDebugging(
           `Skipping cleanup of old installLocation (${oldEntry.installLocation}) — ` +
-            `outside ${cacheDir}. The path is corrupted; leaving it alone and ` +
-            `overwriting the config entry.`,
+          `outside ${cacheDir}. The path is corrupted; leaving it alone and ` +
+          `overwriting the config entry.`,
           { level: 'warn' },
         )
       }
@@ -1949,8 +1949,8 @@ export async function removeMarketplaceSource(name: string): Promise<void> {
   if (seedDir) {
     throw new Error(
       `Marketplace '${name}' is registered from the read-only seed directory ` +
-        `(${seedDir}) and will be re-registered on next startup. ` +
-        `To stop using its plugins: claude plugin disable <plugin>@${name}`,
+      `(${seedDir}) and will be re-registered on next startup. ` +
+      `To stop using its plugins: claude plugin disable <plugin>@${name}`,
     )
   }
 
@@ -2140,9 +2140,9 @@ export const getMarketplace = memoize(
     ) {
       throw new Error(
         `Marketplace "${name}" has a relative source path (${entry.source.path}) ` +
-          `in known_marketplaces.json — this is stale state from an older ` +
-          `Claude Code version. Run 'claude marketplace remove ${name}' and ` +
-          `re-add it from the original project directory.`,
+        `in known_marketplaces.json — this is stale state from an older ` +
+        `Claude Code version. Run 'claude marketplace remove ${name}' and ` +
+        `re-add it from the original project directory.`,
       )
     }
 
@@ -2162,7 +2162,7 @@ export const getMarketplace = memoize(
     // Cache doesn't exist or is invalid, fetch from source
     let marketplace: PluginMarketplace
     try {
-      ;({ marketplace } = await loadAndCacheMarketplace(entry.source))
+      ; ({ marketplace } = await loadAndCacheMarketplace(entry.source))
     } catch (error) {
       throw new Error(
         `Failed to load marketplace "${name}" from source (${entry.source.source}): ${errorMessage(error)}`,
@@ -2401,7 +2401,7 @@ export async function refreshMarketplace(
     if (seedDir) {
       throw new Error(
         `Marketplace '${name}' is seed-managed (${seedDir}) and its content is ` +
-          `controlled by the seed image. To update: ask your admin to update the seed.`,
+        `controlled by the seed image. To update: ask your admin to update the seed.`,
       )
     }
 
@@ -2417,10 +2417,10 @@ export async function refreshMarketplace(
       if (resolvedLoc !== cacheDir && !resolvedLoc.startsWith(cacheDir + sep)) {
         throw new Error(
           `Marketplace '${name}' has a corrupted installLocation ` +
-            `(${installLocation}) — expected a path inside ${cacheDir}. ` +
-            `This can happen after cross-platform path writes or manual edits ` +
-            `to known_marketplaces.json. ` +
-            `Run: claude plugin marketplace remove "${name}" and re-add it.`,
+          `(${installLocation}) — expected a path inside ${cacheDir}. ` +
+          `This can happen after cross-platform path writes or manual edits ` +
+          `to known_marketplaces.json. ` +
+          `Run: claude plugin marketplace remove "${name}" and re-add it.`,
         )
       }
     }
@@ -2538,9 +2538,9 @@ export async function refreshMarketplace(
             : `This marketplace may have been deprecated or moved to a new location.`
         throw new Error(
           `The marketplace.json file is no longer present in this repository.\n\n` +
-            `${reason}\n` +
-            `Source: ${sourceDisplay}\n\n` +
-            `You can remove this marketplace with: claude plugin marketplace remove "${name}"`,
+          `${reason}\n` +
+          `Source: ${sourceDisplay}\n\n` +
+          `You can remove this marketplace with: claude plugin marketplace remove "${name}"`,
         )
       }
     } else if (source.source === 'url') {
@@ -2604,8 +2604,8 @@ export async function setMarketplaceAutoUpdate(
   if (seedDir) {
     throw new Error(
       `Marketplace '${name}' is seed-managed (${seedDir}) and ` +
-        `auto-update is always disabled for seed content. ` +
-        `To update: ask your admin to update the seed.`,
+      `auto-update is always disabled for seed content. ` +
+      `To update: ask your admin to update the seed.`,
     )
   }
 

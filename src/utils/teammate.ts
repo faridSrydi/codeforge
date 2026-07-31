@@ -1,7 +1,7 @@
 /**
  * Teammate utilities for agent swarm coordination
  *
- * These helpers identify whether this Claude Code instance is running as a
+ * These helpers identify whether thisCode Forge instance is running as a
  * spawned teammate in a swarm. Teammates receive their identity via CLI
  * arguments (--agent-id, --team-name, etc.) which are stored in dynamicTeamContext.
  *
@@ -171,8 +171,8 @@ export function isPlanModeRequired(): boolean {
 export function isTeamLead(
   teamContext:
     | {
-        leadAgentId: string
-      }
+      leadAgentId: string
+    }
     | undefined,
 ): boolean {
   if (!teamContext?.leadAgentId) {

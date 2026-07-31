@@ -1,9 +1,9 @@
-export const PR_TITLE = 'Add Claude Code GitHub Workflow'
+export const PR_TITLE = 'AddCode Forge GitHub Workflow'
 
 export const GITHUB_ACTION_SETUP_DOCS_URL =
   'https://github.com/anthropics/claude-code-action/blob/main/docs/setup.md'
 
-export const WORKFLOW_CONTENT = `name: Claude Code
+export const WORKFLOW_CONTENT = `name:Code Forge
 
 on:
   issue_comment:
@@ -35,7 +35,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Run Claude Code
+      - name: RunCode Forge
         id: claude
         uses: anthropics/claude-code-action@v1
         with:
@@ -55,11 +55,11 @@ jobs:
 
 `
 
-export const PR_BODY = `## 🤖 Installing Claude Code GitHub App
+export const PR_BODY = `## 🤖 InstallingCode Forge GitHub App
 
-This PR adds a GitHub Actions workflow that enables Claude Code integration in our repository.
+This PR adds a GitHub Actions workflow that enablesCode Forge integration in our repository.
 
-### What is Claude Code?
+### What isCode Forge?
 
 [Claude Code](https://claude.com/claude-code) is an AI coding agent that can help with:
 - Bug fixes and improvements  
@@ -97,7 +97,7 @@ There's more information in the [Claude Code action repo](https://github.com/ant
 
 After merging this PR, let's try mentioning @claude in a comment on any PR to get started!`
 
-export const CODE_REVIEW_PLUGIN_WORKFLOW_CONTENT = `name: Claude Code Review
+export const CODE_REVIEW_PLUGIN_WORKFLOW_CONTENT = `name:Code Forge Review
 
 on:
   pull_request:
@@ -130,7 +130,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Run Claude Code Review
+      - name: RunCode Forge Review
         id: claude-review
         uses: anthropics/claude-code-action@v1
         with:

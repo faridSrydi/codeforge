@@ -61,10 +61,10 @@ const BASH_SEARCH_COMMANDS = new Set(['find', 'grep', 'rg', 'ag', 'ack', 'locate
 
 // Read/view commands for collapsible display (cat, head, etc.)
 const BASH_READ_COMMANDS = new Set(['cat', 'head', 'tail', 'less', 'more',
-// Analysis commands
-'wc', 'stat', 'file', 'strings',
-// Data processing — commonly used to parse/transform file content in pipes
-'jq', 'awk', 'cut', 'sort', 'uniq', 'tr']);
+  // Analysis commands
+  'wc', 'stat', 'file', 'strings',
+  // Data processing — commonly used to parse/transform file content in pipes
+  'jq', 'awk', 'cut', 'sort', 'uniq', 'tr']);
 
 // Directory-listing commands for collapsible display (ls, tree, du).
 // Split from BASH_READ_COMMANDS so the summary says "Listed N directories"
@@ -222,8 +222,8 @@ const DISALLOWED_AUTO_BACKGROUND_COMMANDS = ['sleep' // Sleep should run in fore
 
 // Check if background tasks are disabled at module load time
 const isBackgroundTasksDisabled =
-// eslint-disable-next-line custom-rules/no-process-env-top-level -- Intentional: schema must be defined at module load
-isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_BACKGROUND_TASKS);
+  // eslint-disable-next-line custom-rules/no-process-env-top-level -- Intentional: schema must be defined at module load
+  isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_BACKGROUND_TASKS);
 const fullInputSchema = lazySchema(() => z.strictObject({
   command: z.string().describe('The command to execute'),
   timeout: semanticNumber(z.number().optional()).describe(`Optional timeout in milliseconds (max ${getMaxTimeoutMs()})`),
@@ -771,7 +771,7 @@ export const BashTool = buildTool({
     }
     let strippedStdout = stripEmptyLines(stdout);
 
-    // Claude Code hints protocol: CLIs/SDKs gated on CLAUDECODE=1 emit a
+    //Code Forge hints protocol: CLIs/SDKs gated on CLAUDECODE=1 emit a
     // `<claude-code-hint />` tag to stderr (merged into stdout here). Scan,
     // record for useClaudeCodeHintRecommendation to surface, then strip
     // so the model never sees the tag — a zero-token side channel.

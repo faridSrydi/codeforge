@@ -94,11 +94,11 @@ import type { DiscoverySignal } from '../services/skillSearch/signals.js'
 /* eslint-disable @typescript-eslint/no-require-imports */
 const skillSearchModules = feature('EXPERIMENTAL_SKILL_SEARCH')
   ? {
-      featureCheck:
-        require('../services/skillSearch/featureCheck.js') as typeof import('../services/skillSearch/featureCheck.js'),
-      prefetch:
-        require('../services/skillSearch/prefetch.js') as typeof import('../services/skillSearch/prefetch.js'),
-    }
+    featureCheck:
+      require('../services/skillSearch/featureCheck.js') as typeof import('../services/skillSearch/featureCheck.js'),
+    prefetch:
+      require('../services/skillSearch/prefetch.js') as typeof import('../services/skillSearch/prefetch.js'),
+  }
   : null
 const autoModeStateModule = feature('TRANSCRIPT_CLASSIFIER')
   ? (require('./permissions/autoModeState.js') as typeof import('./permissions/autoModeState.js'))
@@ -200,8 +200,8 @@ import { feature } from 'bun:bundle'
 const BRIEF_TOOL_NAME: string | null =
   feature('KAIROS') || feature('KAIROS_BRIEF')
     ? (
-        require('../tools/BriefTool/prompt.js') as typeof import('../tools/BriefTool/prompt.js')
-      ).BRIEF_TOOL_NAME
+      require('../tools/BriefTool/prompt.js') as typeof import('../tools/BriefTool/prompt.js')
+    ).BRIEF_TOOL_NAME
     : null
 const sessionTranscriptModule = feature('KAIROS')
   ? (require('../services/sessionTranscript/sessionTranscript.js') as typeof import('../services/sessionTranscript/sessionTranscript.js'))
@@ -352,29 +352,29 @@ export type AsyncHookResponseAttachment = {
 export type HookAttachment =
   | HookCancelledAttachment
   | {
-      type: 'hook_blocking_error'
-      blockingError: HookBlockingError
-      hookName: string
-      toolUseID: string
-      hookEvent: HookEvent
-    }
+    type: 'hook_blocking_error'
+    blockingError: HookBlockingError
+    hookName: string
+    toolUseID: string
+    hookEvent: HookEvent
+  }
   | HookNonBlockingErrorAttachment
   | HookErrorDuringExecutionAttachment
   | {
-      type: 'hook_stopped_continuation'
-      message: string
-      hookName: string
-      toolUseID: string
-      hookEvent: HookEvent
-    }
+    type: 'hook_stopped_continuation'
+    message: string
+    hookName: string
+    toolUseID: string
+    hookEvent: HookEvent
+  }
   | HookSuccessAttachment
   | {
-      type: 'hook_additional_context'
-      content: string[]
-      hookName: string
-      toolUseID: string
-      hookEvent: HookEvent
-    }
+    type: 'hook_additional_context'
+    content: string[]
+    hookName: string
+    toolUseID: string
+    hookEvent: HookEvent
+  }
   | HookSystemMessageAttachment
   | HookPermissionDecisionAttachment
 
@@ -449,272 +449,272 @@ export type Attachment =
    * An at-mentioned file was edited
    */
   | {
-      type: 'edited_text_file'
-      filename: string
-      snippet: string
-    }
+    type: 'edited_text_file'
+    filename: string
+    snippet: string
+  }
   | {
-      type: 'edited_image_file'
-      filename: string
-      content: FileReadToolOutput
-    }
+    type: 'edited_image_file'
+    filename: string
+    content: FileReadToolOutput
+  }
   | {
-      type: 'directory'
+    type: 'directory'
+    path: string
+    content: string
+    /** Path relative to CWD at creation time, for stable display */
+    displayPath: string
+  }
+  | {
+    type: 'selected_lines_in_ide'
+    ideName: string
+    lineStart: number
+    lineEnd: number
+    filename: string
+    content: string
+    /** Path relative to CWD at creation time, for stable display */
+    displayPath: string
+  }
+  | {
+    type: 'opened_file_in_ide'
+    filename: string
+  }
+  | {
+    type: 'todo_reminder'
+    content: TodoList
+    itemCount: number
+  }
+  | {
+    type: 'task_reminder'
+    content: Task[]
+    itemCount: number
+  }
+  | {
+    type: 'nested_memory'
+    path: string
+    content: MemoryFileInfo
+    /** Path relative to CWD at creation time, for stable display */
+    displayPath: string
+  }
+  | {
+    type: 'relevant_memories'
+    memories: {
       path: string
       content: string
-      /** Path relative to CWD at creation time, for stable display */
-      displayPath: string
-    }
+      mtimeMs: number
+      /**
+       * Pre-computed header string (age + path prefix).  Computed once
+       * at attachment-creation time so the rendered bytes are stable
+       * across turns — recomputing memoryAge(mtimeMs) at render time
+       * calls Date.now(), so "saved 3 days ago" becomes "saved 4 days
+       * ago" across turns → different bytes → prompt cache bust.
+       * Optional for backward compat with resumed sessions; render
+       * path falls back to recomputing if missing.
+       */
+      header?: string
+      /**
+       * lineCount when the file was truncated by readMemoriesForSurfacing,
+       * else undefined. Threaded to the readFileState write so
+       * getChangedFiles skips truncated memories (partial content would
+       * yield a misleading diff).
+       */
+      limit?: number
+    }[]
+  }
   | {
-      type: 'selected_lines_in_ide'
-      ideName: string
-      lineStart: number
-      lineEnd: number
-      filename: string
-      content: string
-      /** Path relative to CWD at creation time, for stable display */
-      displayPath: string
-    }
+    type: 'dynamic_skill'
+    skillDir: string
+    skillNames: string[]
+    /** Path relative to CWD at creation time, for stable display */
+    displayPath: string
+  }
   | {
-      type: 'opened_file_in_ide'
-      filename: string
-    }
+    type: 'skill_listing'
+    content: string
+    skillCount: number
+    isInitial: boolean
+  }
   | {
-      type: 'todo_reminder'
-      content: TodoList
-      itemCount: number
-    }
+    type: 'skill_discovery'
+    skills: { name: string; description: string; shortId?: string }[]
+    signal: DiscoverySignal
+    source: 'native' | 'aki' | 'both'
+  }
   | {
-      type: 'task_reminder'
-      content: Task[]
-      itemCount: number
-    }
+    type: 'queued_command'
+    prompt: string | Array<ContentBlockParam>
+    source_uuid?: UUID
+    imagePasteIds?: number[]
+    /** Original queue mode — 'prompt' for user messages, 'task-notification' for system events */
+    commandMode?: string
+    /** Provenance carried from QueuedCommand so mid-turn drains preserve it */
+    origin?: MessageOrigin
+    /** Carried from QueuedCommand.isMeta — distinguishes human-typed from system-injected */
+    isMeta?: boolean
+  }
   | {
-      type: 'nested_memory'
-      path: string
-      content: MemoryFileInfo
-      /** Path relative to CWD at creation time, for stable display */
-      displayPath: string
-    }
+    type: 'output_style'
+    style: string
+  }
   | {
-      type: 'relevant_memories'
-      memories: {
-        path: string
-        content: string
-        mtimeMs: number
-        /**
-         * Pre-computed header string (age + path prefix).  Computed once
-         * at attachment-creation time so the rendered bytes are stable
-         * across turns — recomputing memoryAge(mtimeMs) at render time
-         * calls Date.now(), so "saved 3 days ago" becomes "saved 4 days
-         * ago" across turns → different bytes → prompt cache bust.
-         * Optional for backward compat with resumed sessions; render
-         * path falls back to recomputing if missing.
-         */
-        header?: string
-        /**
-         * lineCount when the file was truncated by readMemoriesForSurfacing,
-         * else undefined. Threaded to the readFileState write so
-         * getChangedFiles skips truncated memories (partial content would
-         * yield a misleading diff).
-         */
-        limit?: number
-      }[]
-    }
+    type: 'diagnostics'
+    files: DiagnosticFile[]
+    isNew: boolean
+  }
   | {
-      type: 'dynamic_skill'
-      skillDir: string
-      skillNames: string[]
-      /** Path relative to CWD at creation time, for stable display */
-      displayPath: string
-    }
+    type: 'plan_mode'
+    reminderType: 'full' | 'sparse'
+    isSubAgent?: boolean
+    planFilePath: string
+    planExists: boolean
+  }
   | {
-      type: 'skill_listing'
-      content: string
-      skillCount: number
-      isInitial: boolean
-    }
+    type: 'plan_mode_reentry'
+    planFilePath: string
+  }
   | {
-      type: 'skill_discovery'
-      skills: { name: string; description: string; shortId?: string }[]
-      signal: DiscoverySignal
-      source: 'native' | 'aki' | 'both'
-    }
+    type: 'plan_mode_exit'
+    planFilePath: string
+    planExists: boolean
+  }
   | {
-      type: 'queued_command'
-      prompt: string | Array<ContentBlockParam>
-      source_uuid?: UUID
-      imagePasteIds?: number[]
-      /** Original queue mode — 'prompt' for user messages, 'task-notification' for system events */
-      commandMode?: string
-      /** Provenance carried from QueuedCommand so mid-turn drains preserve it */
-      origin?: MessageOrigin
-      /** Carried from QueuedCommand.isMeta — distinguishes human-typed from system-injected */
-      isMeta?: boolean
-    }
+    type: 'auto_mode'
+    reminderType: 'full' | 'sparse'
+  }
   | {
-      type: 'output_style'
-      style: string
-    }
+    type: 'auto_mode_exit'
+  }
   | {
-      type: 'diagnostics'
-      files: DiagnosticFile[]
-      isNew: boolean
-    }
+    type: 'critical_system_reminder'
+    content: string
+  }
   | {
-      type: 'plan_mode'
-      reminderType: 'full' | 'sparse'
-      isSubAgent?: boolean
-      planFilePath: string
-      planExists: boolean
-    }
+    type: 'plan_file_reference'
+    planFilePath: string
+    planContent: string
+  }
   | {
-      type: 'plan_mode_reentry'
-      planFilePath: string
-    }
+    type: 'mcp_resource'
+    server: string
+    uri: string
+    name: string
+    description?: string
+    content: ReadResourceResult
+  }
   | {
-      type: 'plan_mode_exit'
-      planFilePath: string
-      planExists: boolean
-    }
-  | {
-      type: 'auto_mode'
-      reminderType: 'full' | 'sparse'
-    }
-  | {
-      type: 'auto_mode_exit'
-    }
-  | {
-      type: 'critical_system_reminder'
-      content: string
-    }
-  | {
-      type: 'plan_file_reference'
-      planFilePath: string
-      planContent: string
-    }
-  | {
-      type: 'mcp_resource'
-      server: string
-      uri: string
-      name: string
-      description?: string
-      content: ReadResourceResult
-    }
-  | {
-      type: 'command_permissions'
-      allowedTools: string[]
-      model?: string
-    }
+    type: 'command_permissions'
+    allowedTools: string[]
+    model?: string
+  }
   | AgentMentionAttachment
   | {
-      type: 'task_status'
-      taskId: string
-      taskType: TaskType
-      status: TaskStatus
-      description: string
-      deltaSummary: string | null
-      outputFilePath?: string
-    }
+    type: 'task_status'
+    taskId: string
+    taskType: TaskType
+    status: TaskStatus
+    description: string
+    deltaSummary: string | null
+    outputFilePath?: string
+  }
   | AsyncHookResponseAttachment
   | {
-      type: 'token_usage'
-      used: number
-      total: number
-      remaining: number
-    }
+    type: 'token_usage'
+    used: number
+    total: number
+    remaining: number
+  }
   | {
-      type: 'budget_usd'
-      used: number
-      total: number
-      remaining: number
-    }
+    type: 'budget_usd'
+    used: number
+    total: number
+    remaining: number
+  }
   | {
-      type: 'output_token_usage'
-      turn: number
-      session: number
-      budget: number | null
-    }
+    type: 'output_token_usage'
+    turn: number
+    session: number
+    budget: number | null
+  }
   | {
-      type: 'structured_output'
-      data: unknown
-    }
+    type: 'structured_output'
+    data: unknown
+  }
   | TeammateMailboxAttachment
   | TeamContextAttachment
   | HookAttachment
   | {
-      type: 'invoked_skills'
-      skills: Array<{
-        name: string
-        path: string
-        content: string
-      }>
-    }
-  | {
-      type: 'verify_plan_reminder'
-    }
-  | {
-      type: 'max_turns_reached'
-      maxTurns: number
-      turnCount: number
-    }
-  | {
-      type: 'current_session_memory'
-      content: string
-      path: string
-      tokenCount: number
-    }
-  | {
-      type: 'teammate_shutdown_batch'
-      count: number
-    }
-  | {
-      type: 'compaction_reminder'
-    }
-  | {
-      type: 'context_efficiency'
-    }
-  | {
-      type: 'date_change'
-      newDate: string
-    }
-  | {
-      type: 'ultrathink_effort'
-      level: 'high'
-    }
-  | {
-      type: 'deferred_tools_delta'
-      addedNames: string[]
-      addedLines: string[]
-      removedNames: string[]
-    }
-  | {
-      type: 'agent_listing_delta'
-      addedTypes: string[]
-      addedLines: string[]
-      removedTypes: string[]
-      /** True when this is the first announcement in the conversation */
-      isInitial: boolean
-      /** Whether to include the "launch multiple agents concurrently" note (non-pro subscriptions) */
-      showConcurrencyNote: boolean
-    }
-  | {
-      type: 'mcp_instructions_delta'
-      addedNames: string[]
-      addedBlocks: string[]
-      removedNames: string[]
-    }
-  | {
-      type: 'companion_intro'
+    type: 'invoked_skills'
+    skills: Array<{
       name: string
-      species: string
-    }
+      path: string
+      content: string
+    }>
+  }
   | {
-      type: 'bagel_console'
-      errorCount: number
-      warningCount: number
-      sample: string
-    }
+    type: 'verify_plan_reminder'
+  }
+  | {
+    type: 'max_turns_reached'
+    maxTurns: number
+    turnCount: number
+  }
+  | {
+    type: 'current_session_memory'
+    content: string
+    path: string
+    tokenCount: number
+  }
+  | {
+    type: 'teammate_shutdown_batch'
+    count: number
+  }
+  | {
+    type: 'compaction_reminder'
+  }
+  | {
+    type: 'context_efficiency'
+  }
+  | {
+    type: 'date_change'
+    newDate: string
+  }
+  | {
+    type: 'ultrathink_effort'
+    level: 'high'
+  }
+  | {
+    type: 'deferred_tools_delta'
+    addedNames: string[]
+    addedLines: string[]
+    removedNames: string[]
+  }
+  | {
+    type: 'agent_listing_delta'
+    addedTypes: string[]
+    addedLines: string[]
+    removedTypes: string[]
+    /** True when this is the first announcement in the conversation */
+    isInitial: boolean
+    /** Whether to include the "launch multiple agents concurrently" note (non-pro subscriptions) */
+    showConcurrencyNote: boolean
+  }
+  | {
+    type: 'mcp_instructions_delta'
+    addedNames: string[]
+    addedBlocks: string[]
+    removedNames: string[]
+  }
+  | {
+    type: 'companion_intro'
+    name: string
+    species: string
+  }
+  | {
+    type: 'bagel_console'
+    errorCount: number
+    warningCount: number
+    sample: string
+  }
 
 export type TeammateMailboxAttachment = {
   type: 'teammate_mailbox'
@@ -772,46 +772,46 @@ export async function getAttachments(
   // Attachments which are added in response to on user input
   const userInputAttachments = input
     ? [
-        maybe('at_mentioned_files', () =>
-          processAtMentionedFiles(input, context),
-        ),
-        maybe('mcp_resources', () =>
-          processMcpResourceAttachments(input, context),
-        ),
-        maybe('agent_mentions', () =>
-          Promise.resolve(
-            processAgentMentions(
-              input,
-              toolUseContext.options.agentDefinitions.activeAgents,
-            ),
+      maybe('at_mentioned_files', () =>
+        processAtMentionedFiles(input, context),
+      ),
+      maybe('mcp_resources', () =>
+        processMcpResourceAttachments(input, context),
+      ),
+      maybe('agent_mentions', () =>
+        Promise.resolve(
+          processAgentMentions(
+            input,
+            toolUseContext.options.agentDefinitions.activeAgents,
           ),
         ),
-        // Skill discovery on turn 0 (user input as signal). Inter-turn
-        // discovery runs via startSkillDiscoveryPrefetch in query.ts,
-        // gated on write-pivot detection — see skillSearch/prefetch.ts.
-        // feature() here lets DCE drop the 'skill_discovery' string (and the
-        // function it calls) from external builds.
-        //
-        // skipSkillDiscovery gates out the SKILL.md-expansion path
-        // (getMessagesForPromptSlashCommand). When a skill is invoked, its
-        // SKILL.md content is passed as `input` here to extract @-mentions —
-        // but that content is NOT user intent and must not trigger discovery.
-        // Without this gate, a 110KB SKILL.md fires ~3.3s of chunked AKI
-        // queries on every skill invocation (session 13a9afae).
-        ...(feature('EXPERIMENTAL_SKILL_SEARCH') &&
+      ),
+      // Skill discovery on turn 0 (user input as signal). Inter-turn
+      // discovery runs via startSkillDiscoveryPrefetch in query.ts,
+      // gated on write-pivot detection — see skillSearch/prefetch.ts.
+      // feature() here lets DCE drop the 'skill_discovery' string (and the
+      // function it calls) from external builds.
+      //
+      // skipSkillDiscovery gates out the SKILL.md-expansion path
+      // (getMessagesForPromptSlashCommand). When a skill is invoked, its
+      // SKILL.md content is passed as `input` here to extract @-mentions —
+      // but that content is NOT user intent and must not trigger discovery.
+      // Without this gate, a 110KB SKILL.md fires ~3.3s of chunked AKI
+      // queries on every skill invocation (session 13a9afae).
+      ...(feature('EXPERIMENTAL_SKILL_SEARCH') &&
         skillSearchModules &&
         !options?.skipSkillDiscovery
-          ? [
-              maybe('skill_discovery', () =>
-                skillSearchModules.prefetch.getTurnZeroSkillDiscovery(
-                  input,
-                  messages ?? [],
-                  context,
-                ),
-              ),
-            ]
-          : []),
-      ]
+        ? [
+          maybe('skill_discovery', () =>
+            skillSearchModules.prefetch.getTurnZeroSkillDiscovery(
+              input,
+              messages ?? [],
+              context,
+            ),
+          ),
+        ]
+        : []),
+    ]
     : []
 
   // Process user input attachments first (includes @mentioned files)
@@ -863,10 +863,10 @@ export async function getAttachments(
     ),
     ...(feature('BUDDY')
       ? [
-          maybe('companion_intro', () =>
-            Promise.resolve(getCompanionIntroAttachment(messages)),
-          ),
-        ]
+        maybe('companion_intro', () =>
+          Promise.resolve(getCompanionIntroAttachment(messages)),
+        ),
+      ]
       : []),
     maybe('changed_files', () => getChangedFiles(context)),
     maybe('nested_memory', () => getNestedMemoryAttachments(context)),
@@ -882,13 +882,13 @@ export async function getAttachments(
     maybe('plan_mode_exit', () => getPlanModeExitAttachment(toolUseContext)),
     ...(feature('TRANSCRIPT_CLASSIFIER')
       ? [
-          maybe('auto_mode', () =>
-            getAutoModeAttachments(messages, toolUseContext),
-          ),
-          maybe('auto_mode_exit', () =>
-            getAutoModeExitAttachment(toolUseContext),
-          ),
-        ]
+        maybe('auto_mode', () =>
+          getAutoModeAttachments(messages, toolUseContext),
+        ),
+        maybe('auto_mode_exit', () =>
+          getAutoModeExitAttachment(toolUseContext),
+        ),
+      ]
       : []),
     maybe('todo_reminders', () =>
       isTodoV2Enabled()
@@ -897,21 +897,21 @@ export async function getAttachments(
     ),
     ...(isAgentSwarmsEnabled()
       ? [
-          // Skip teammate mailbox for the session_memory forked agent.
-          // It shares AppState.teamContext with the leader, so isTeamLead resolves
-          // true and it reads+marks-as-read the leader's DMs as ephemeral attachments,
-          // silently stealing messages that should be delivered as permanent turns.
-          ...(querySource === 'session_memory'
-            ? []
-            : [
-                maybe('teammate_mailbox', async () =>
-                  getTeammateMailboxAttachments(toolUseContext),
-                ),
-              ]),
-          maybe('team_context', async () =>
-            getTeamContextAttachment(messages ?? []),
-          ),
-        ]
+        // Skip teammate mailbox for the session_memory forked agent.
+        // It shares AppState.teamContext with the leader, so isTeamLead resolves
+        // true and it reads+marks-as-read the leader's DMs as ephemeral attachments,
+        // silently stealing messages that should be delivered as permanent turns.
+        ...(querySource === 'session_memory'
+          ? []
+          : [
+            maybe('teammate_mailbox', async () =>
+              getTeammateMailboxAttachments(toolUseContext),
+            ),
+          ]),
+        maybe('team_context', async () =>
+          getTeamContextAttachment(messages ?? []),
+        ),
+      ]
       : []),
     maybe('agent_pending_messages', async () =>
       getAgentPendingMessageAttachments(toolUseContext),
@@ -921,69 +921,69 @@ export async function getAttachments(
     ),
     ...(feature('COMPACTION_REMINDERS')
       ? [
-          maybe('compaction_reminder', () =>
-            Promise.resolve(
-              getCompactionReminderAttachment(
-                messages ?? [],
-                toolUseContext.options.mainLoopModel,
-              ),
+        maybe('compaction_reminder', () =>
+          Promise.resolve(
+            getCompactionReminderAttachment(
+              messages ?? [],
+              toolUseContext.options.mainLoopModel,
             ),
           ),
-        ]
+        ),
+      ]
       : []),
     ...(feature('HISTORY_SNIP')
       ? [
-          maybe('context_efficiency', () =>
-            Promise.resolve(getContextEfficiencyAttachment(messages ?? [])),
-          ),
-        ]
+        maybe('context_efficiency', () =>
+          Promise.resolve(getContextEfficiencyAttachment(messages ?? [])),
+        ),
+      ]
       : []),
   ]
 
   // Attachments which are semantically only for the main conversation or don't have concurrency-safe implementations
   const mainThreadAttachments = isMainThread
     ? [
-        maybe('ide_selection', async () =>
-          getSelectedLinesFromIDE(ideSelection, toolUseContext),
-        ),
-        maybe('ide_opened_file', async () =>
-          getOpenedFileFromIDE(ideSelection, toolUseContext),
-        ),
-        maybe('output_style', async () =>
-          Promise.resolve(getOutputStyleAttachment()),
-        ),
-        maybe('diagnostics', async () =>
-          getDiagnosticAttachments(toolUseContext),
-        ),
-        maybe('lsp_diagnostics', async () =>
-          getLSPDiagnosticAttachments(toolUseContext),
-        ),
-        maybe('unified_tasks', async () =>
-          getUnifiedTaskAttachments(toolUseContext),
-        ),
-        maybe('async_hook_responses', async () =>
-          getAsyncHookResponseAttachments(),
-        ),
-        maybe('token_usage', async () =>
-          Promise.resolve(
-            getTokenUsageAttachment(
-              messages ?? [],
-              toolUseContext.options.mainLoopModel,
-            ),
+      maybe('ide_selection', async () =>
+        getSelectedLinesFromIDE(ideSelection, toolUseContext),
+      ),
+      maybe('ide_opened_file', async () =>
+        getOpenedFileFromIDE(ideSelection, toolUseContext),
+      ),
+      maybe('output_style', async () =>
+        Promise.resolve(getOutputStyleAttachment()),
+      ),
+      maybe('diagnostics', async () =>
+        getDiagnosticAttachments(toolUseContext),
+      ),
+      maybe('lsp_diagnostics', async () =>
+        getLSPDiagnosticAttachments(toolUseContext),
+      ),
+      maybe('unified_tasks', async () =>
+        getUnifiedTaskAttachments(toolUseContext),
+      ),
+      maybe('async_hook_responses', async () =>
+        getAsyncHookResponseAttachments(),
+      ),
+      maybe('token_usage', async () =>
+        Promise.resolve(
+          getTokenUsageAttachment(
+            messages ?? [],
+            toolUseContext.options.mainLoopModel,
           ),
         ),
-        maybe('budget_usd', async () =>
-          Promise.resolve(
-            getMaxBudgetUsdAttachment(toolUseContext.options.maxBudgetUsd),
-          ),
+      ),
+      maybe('budget_usd', async () =>
+        Promise.resolve(
+          getMaxBudgetUsdAttachment(toolUseContext.options.maxBudgetUsd),
         ),
-        maybe('output_token_usage', async () =>
-          Promise.resolve(getOutputTokenUsageAttachment()),
-        ),
-        maybe('verify_plan_reminder', async () =>
-          getVerifyPlanReminderAttachment(messages, toolUseContext),
-        ),
-      ]
+      ),
+      maybe('output_token_usage', async () =>
+        Promise.resolve(getOutputTokenUsageAttachment()),
+      ),
+      maybe('verify_plan_reminder', async () =>
+        getVerifyPlanReminderAttachment(messages, toolUseContext),
+      ),
+    ]
     : []
 
   // Process thread and main thread attachments in parallel (no dependencies between them)
@@ -1225,7 +1225,7 @@ async function getPlanModeAttachments(
   const reminderType: 'full' | 'sparse' =
     attachmentCount %
       PLAN_MODE_ATTACHMENT_CONFIG.FULL_REMINDER_EVERY_N_ATTACHMENTS ===
-    1
+      1
       ? 'full'
       : 'sparse'
 
@@ -1366,7 +1366,7 @@ async function getAutoModeAttachments(
   const reminderType: 'full' | 'sparse' =
     attachmentCount %
       AUTO_MODE_ATTACHMENT_CONFIG.FULL_REMINDER_EVERY_N_ATTACHMENTS ===
-    1
+      1
       ? 'full'
       : 'sparse'
 
@@ -2303,7 +2303,7 @@ export async function readMemoriesForSurfacing(
           result.totalLines > MAX_MEMORY_LINES || result.truncatedByBytes
         const content = truncated
           ? result.content +
-            `\n\n> This memory file was truncated (${result.truncatedByBytes ? `${MAX_MEMORY_BYTES} byte limit` : `first ${MAX_MEMORY_LINES} lines`}). Use the ${FILE_READ_TOOL_NAME} tool to view the complete file at: ${filePath}`
+          `\n\n> This memory file was truncated (${result.truncatedByBytes ? `${MAX_MEMORY_BYTES} byte limit` : `first ${MAX_MEMORY_LINES} lines`}). Use the ${FILE_READ_TOOL_NAME} tool to view the complete file at: ${filePath}`
           : result.content
         return {
           path: filePath,
@@ -3519,7 +3519,7 @@ async function getAsyncHookResponseAttachments(): Promise<Attachment[]> {
 
 /**
  * Get teammate mailbox attachments for agent swarm communication
- * Teammates are independent Claude Code sessions running in parallel (swarms),
+ * Teammates are independentCode Forge sessions running in parallel (swarms),
  * not parent-child subagent relationships.
  *
  * This function checks two sources for messages:
@@ -3710,8 +3710,8 @@ async function getTeammateMailboxAttachments(
         // Find the teammate ID by name
         const teammateId = appState.teamContext?.teammates
           ? Object.entries(appState.teamContext.teammates).find(
-              ([, t]) => t.name === teammateToRemove,
-            )?.[0]
+            ([, t]) => t.name === teammateToRemove,
+          )?.[0]
           : undefined
 
         if (teammateId) {

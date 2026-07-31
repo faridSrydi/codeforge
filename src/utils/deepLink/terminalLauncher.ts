@@ -1,7 +1,7 @@
 /**
  * Terminal Launcher
  *
- * Detects the user's preferred terminal emulator and launches Claude Code
+ * Detects the user's preferred terminal emulator and launchesCode Forge
  * inside it. Used by the deep link protocol handler when invoked by the OS
  * (i.e., not already running inside a terminal).
  *
@@ -30,17 +30,17 @@ const MACOS_TERMINALS: Array<{
   bundleId: string
   app: string
 }> = [
-  { name: 'iTerm2', bundleId: 'com.googlecode.iterm2', app: 'iTerm' },
-  { name: 'Ghostty', bundleId: 'com.mitchellh.ghostty', app: 'Ghostty' },
-  { name: 'Kitty', bundleId: 'net.kovidgoyal.kitty', app: 'kitty' },
-  { name: 'Alacritty', bundleId: 'org.alacritty', app: 'Alacritty' },
-  { name: 'WezTerm', bundleId: 'com.github.wez.wezterm', app: 'WezTerm' },
-  {
-    name: 'Terminal.app',
-    bundleId: 'com.apple.Terminal',
-    app: 'Terminal',
-  },
-]
+    { name: 'iTerm2', bundleId: 'com.googlecode.iterm2', app: 'iTerm' },
+    { name: 'Ghostty', bundleId: 'com.mitchellh.ghostty', app: 'Ghostty' },
+    { name: 'Kitty', bundleId: 'net.kovidgoyal.kitty', app: 'kitty' },
+    { name: 'Alacritty', bundleId: 'org.alacritty', app: 'Alacritty' },
+    { name: 'WezTerm', bundleId: 'com.github.wez.wezterm', app: 'WezTerm' },
+    {
+      name: 'Terminal.app',
+      bundleId: 'com.apple.Terminal',
+      app: 'Terminal',
+    },
+  ]
 
 // Linux terminals in preference order (command name)
 const LINUX_TERMINALS = [
@@ -194,7 +194,7 @@ export async function detectTerminal(): Promise<TerminalInfo | null> {
 }
 
 /**
- * Launch Claude Code in the detected terminal emulator.
+ * LaunchCode Forge in the detected terminal emulator.
  *
  * Pure argv paths (no shell, user input never touches an interpreter):
  *   macOS — Ghostty, Alacritty, Kitty, WezTerm (via open -na --args)

@@ -143,9 +143,9 @@ export class TaskOutput {
             bytesRead >= bytesTotal
               ? lineCount
               : Math.max(
-                  entry.#totalLines,
-                  Math.round((bytesTotal / bytesRead) * lineCount),
-                )
+                entry.#totalLines,
+                Math.round((bytesTotal / bytesRead) * lineCount),
+              )
           entry.#totalLines = totalLines
           entry.#totalBytes = bytesTotal
           entry.#onProgress(
@@ -321,7 +321,7 @@ export class TaskOutput {
       logForDebugging(
         `TaskOutput.#readStdoutFromFile: failed to read ${this.path} (${code}): ${err}`,
       )
-      return `<bash output unavailable: output file ${this.path} could not be read (${code}). This usually means another Claude Code process in the same project deleted it during startup cleanup.>`
+      return `<bash output unavailable: output file ${this.path} could not be read (${code}). This usually means anotherCode Forge process in the same project deleted it during startup cleanup.>`
     }
   }
 

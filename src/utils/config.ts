@@ -370,7 +370,7 @@ export type GlobalConfig = {
   showSpinnerTree?: boolean // Whether to show the teammate spinner tree instead of pills
 
   // First start time tracking
-  firstStartTime?: string // ISO timestamp when Claude Code was first started on this machine
+  firstStartTime?: string // ISO timestamp whenCode Forge was first started on this machine
 
   messageIdleNotifThresholdMs: number // How long the user has to have been idle to get a notification that Claude is done generating
 
@@ -393,8 +393,8 @@ export type GlobalConfig = {
   inputNeededNotifEnabled?: boolean
   agentPushNotifEnabled?: boolean
 
-  // Claude Code usage tracking
-  claudeCodeFirstTokenDate?: string // ISO timestamp of the user's first Claude Code OAuth token
+  //Code Forge usage tracking
+  claudeCodeFirstTokenDate?: string // ISO timestamp of the user's firstCode Forge OAuth token
 
   // Model switch callout tracking (ant-only)
   modelSwitchCalloutDismissed?: boolean // Whether user chose "Don't show again"
@@ -483,10 +483,10 @@ export type GlobalConfig = {
   officialMarketplaceAutoInstallAttempted?: boolean // Whether auto-install was attempted
   officialMarketplaceAutoInstalled?: boolean // Whether auto-install succeeded
   officialMarketplaceAutoInstallFailReason?:
-    | 'policy_blocked'
-    | 'git_unavailable'
-    | 'gcs_unavailable'
-    | 'unknown' // Reason for failure if applicable
+  | 'policy_blocked'
+  | 'git_unavailable'
+  | 'gcs_unavailable'
+  | 'unknown' // Reason for failure if applicable
   officialMarketplaceAutoInstallRetryCount?: number // Number of retry attempts
   officialMarketplaceAutoInstallLastAttemptTime?: number // Timestamp of last attempt
   officialMarketplaceAutoInstallNextRetryTime?: number // Earliest time to retry again
@@ -507,7 +507,7 @@ export type GlobalConfig = {
   lspRecommendationNeverPlugins?: string[] // Plugin IDs to never suggest
   lspRecommendationIgnoredCount?: number // Track ignored recommendations (stops after 5)
 
-  // Claude Code hint protocol state (<claude-code-hint /> tags from CLIs/SDKs).
+  //Code Forge hint protocol state (<claude-code-hint /> tags from CLIs/SDKs).
   // Nested by hint type so future types (docs, mcp, ...) slot in without new
   // top-level keys.
   claudeCodeHints?: {
@@ -918,12 +918,12 @@ function migrateConfigFields(config: GlobalConfig): GlobalConfig {
   // autoUpdaterStatus is removed from the type but may exist in old configs
   const legacy = config as GlobalConfig & {
     autoUpdaterStatus?:
-      | 'migrated'
-      | 'installed'
-      | 'disabled'
-      | 'enabled'
-      | 'no_permissions'
-      | 'not_configured'
+    | 'migrated'
+    | 'installed'
+    | 'disabled'
+    | 'enabled'
+    | 'no_permissions'
+    | 'not_configured'
   }
 
   // Determine install method and auto-update preference from old field
@@ -1024,7 +1024,7 @@ function startGlobalConfigFreshnessWatcher(): void {
           }
           lastReadFileStats = { mtime: curr.mtimeMs, size: curr.size }
         })
-        .catch(() => {})
+        .catch(() => { })
     },
   )
   registerCleanup(async () => {
@@ -1285,10 +1285,10 @@ function saveConfigWithLock<A extends object>(
       // Re-read if we just created one; otherwise reuse the list
       const backupsForCleanup = shouldCreateBackup
         ? fs
-            .readdirStringSync(backupDir)
-            .filter(f => f.startsWith(`${fileBase}.backup.`))
-            .sort()
-            .reverse()
+          .readdirStringSync(backupDir)
+          .filter(f => f.startsWith(`${fileBase}.backup.`))
+          .sort()
+          .reverse()
         : existingBackups
 
       for (const oldBackup of backupsForCleanup.slice(MAX_BACKUPS)) {
@@ -1455,8 +1455,8 @@ function getConfig<A>(
       if (backupPath) {
         process.stderr.write(
           `\nClaude configuration file not found at: ${file}\n` +
-            `A backup file exists at: ${backupPath}\n` +
-            `You can manually restore it by running: cp "${backupPath}" "${file}"\n\n`,
+          `A backup file exists at: ${backupPath}\n` +
+          `You can manually restore it by running: cp "${backupPath}" "${file}"\n\n`,
         )
       }
       return createDefault()
@@ -1573,7 +1573,7 @@ function getConfig<A>(
       if (backupPath) {
         process.stderr.write(
           `A backup file exists at: ${backupPath}\n` +
-            `You can manually restore it by running: cp "${backupPath}" "${file}"\n\n`,
+          `You can manually restore it by running: cp "${backupPath}" "${file}"\n\n`,
         )
       } else {
         process.stderr.write(`\n`)

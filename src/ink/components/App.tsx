@@ -156,10 +156,10 @@ export default class App extends PureComponent<Props, State> {
       columns: this.props.terminalColumns,
       rows: this.props.terminalRows
     }}>
-        <AppContext.Provider value={{
+      <AppContext.Provider value={{
         exit: this.handleExit
       }}>
-          <StdinContext.Provider value={{
+        <StdinContext.Provider value={{
           stdin: this.props.stdin,
           setRawMode: this.handleSetRawMode,
           isRawModeSupported: this.isRawModeSupported(),
@@ -167,16 +167,16 @@ export default class App extends PureComponent<Props, State> {
           internal_eventEmitter: this.internal_eventEmitter,
           internal_querier: this.querier
         }}>
-            <TerminalFocusProvider>
-              <ClockProvider>
-                <CursorDeclarationContext.Provider value={this.props.onCursorDeclaration ?? (() => {})}>
-                  {this.state.error ? <ErrorOverview error={this.state.error as Error} /> : this.props.children}
-                </CursorDeclarationContext.Provider>
-              </ClockProvider>
-            </TerminalFocusProvider>
-          </StdinContext.Provider>
-        </AppContext.Provider>
-      </TerminalSizeContext.Provider>;
+          <TerminalFocusProvider>
+            <ClockProvider>
+              <CursorDeclarationContext.Provider value={this.props.onCursorDeclaration ?? (() => { })}>
+                {this.state.error ? <ErrorOverview error={this.state.error as Error} /> : this.props.children}
+              </CursorDeclarationContext.Provider>
+            </ClockProvider>
+          </TerminalFocusProvider>
+        </StdinContext.Provider>
+      </AppContext.Provider>
+    </TerminalSizeContext.Provider>;
   }
   override componentDidMount() {
     // In accessibility mode, keep the native cursor visible for screen magnifiers and other tools
@@ -409,7 +409,7 @@ export default class App extends PureComponent<Props, State> {
       this.props.stdout.write(SHOW_CURSOR + DFE + DISABLE_MOUSE_TRACKING);
     }
 
-    // Emit suspend event for Claude Code to handle. Mostly just has a notification
+    // Emit suspend event forCode Forge to handle. Mostly just has a notification
     this.internal_eventEmitter.emit('suspend');
 
     // Set up resume handler
@@ -430,7 +430,7 @@ export default class App extends PureComponent<Props, State> {
         this.props.stdout.write(EFE);
       }
 
-      // Emit resume event for Claude Code to handle
+      // Emit resume event forCode Forge to handle
       this.internal_eventEmitter.emit('resume');
       process.removeListener('SIGCONT', resumeHandler);
     };

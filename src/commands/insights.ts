@@ -60,40 +60,40 @@ type RemoteHostInfo = {
 const getRunningRemoteHosts: () => Promise<string[]> =
   process.env.USER_TYPE === 'ant'
     ? async () => {
-        const { stdout, code } = await execFileNoThrow(
-          'coder',
-          ['list', '-o', 'json'],
-          { timeout: 30000 },
-        )
-        if (code !== 0) return []
-        try {
-          const workspaces = jsonParse(stdout) as Array<{
-            name: string
-            latest_build?: { status?: string }
-          }>
-          return workspaces
-            .filter(w => w.latest_build?.status === 'running')
-            .map(w => w.name)
-        } catch {
-          return []
-        }
+      const { stdout, code } = await execFileNoThrow(
+        'coder',
+        ['list', '-o', 'json'],
+        { timeout: 30000 },
+      )
+      if (code !== 0) return []
+      try {
+        const workspaces = jsonParse(stdout) as Array<{
+          name: string
+          latest_build?: { status?: string }
+        }>
+        return workspaces
+          .filter(w => w.latest_build?.status === 'running')
+          .map(w => w.name)
+      } catch {
+        return []
       }
+    }
     : async () => []
 
 const getRemoteHostSessionCount: (hs: string) => Promise<number> =
   process.env.USER_TYPE === 'ant'
     ? async (homespace: string) => {
-        const { stdout, code } = await execFileNoThrow(
-          'ssh',
-          [
-            `${homespace}.coder`,
-            'find /root/.claude/projects -name "*.jsonl" 2>/dev/null | wc -l',
-          ],
-          { timeout: 30000 },
-        )
-        if (code !== 0) return 0
-        return parseInt(stdout.trim(), 10) || 0
-      }
+      const { stdout, code } = await execFileNoThrow(
+        'ssh',
+        [
+          `${homespace}.coder`,
+          'find /root/.claude/projects -name "*.jsonl" 2>/dev/null | wc -l',
+        ],
+        { timeout: 30000 },
+      )
+      if (code !== 0) return 0
+      return parseInt(stdout.trim(), 10) || 0
+    }
     : async () => 0
 
 const collectFromRemoteHost: (
@@ -102,85 +102,85 @@ const collectFromRemoteHost: (
 ) => Promise<{ copied: number; skipped: number }> =
   process.env.USER_TYPE === 'ant'
     ? async (homespace: string, destDir: string) => {
-        const result = { copied: 0, skipped: 0 }
+      const result = { copied: 0, skipped: 0 }
 
-        // Create temp directory
-        const tempDir = await mkdtemp(join(tmpdir(), 'claude-hs-'))
+      // Create temp directory
+      const tempDir = await mkdtemp(join(tmpdir(), 'claude-hs-'))
 
-        try {
-          // SCP the projects folder
-          const scpResult = await execFileNoThrow(
-            'scp',
-            ['-rq', `${homespace}.coder:/root/.claude/projects/`, tempDir],
-            { timeout: 300000 },
-          )
-          if (scpResult.code !== 0) {
-            // SCP failed
-            return result
-          }
-
-          const projectsDir = join(tempDir, 'projects')
-          let projectDirents: Awaited<ReturnType<typeof readdir>>
-          try {
-            projectDirents = await readdir(projectsDir, { withFileTypes: true })
-          } catch {
-            return result
-          }
-
-          // Merge into destination (parallel per project directory)
-          await Promise.all(
-            projectDirents.map(async dirent => {
-              const projectName = dirent.name
-              const projectPath = join(projectsDir, projectName)
-
-              // Skip if not a directory
-              if (!dirent.isDirectory()) return
-
-              const destProjectName = `${projectName}__${homespace}`
-              const destProjectPath = join(destDir, destProjectName)
-
-              try {
-                await mkdir(destProjectPath, { recursive: true })
-              } catch {
-                // Directory may already exist
-              }
-
-              // Copy session files (skip existing)
-              let files: Awaited<ReturnType<typeof readdir>>
-              try {
-                files = await readdir(projectPath, { withFileTypes: true })
-              } catch {
-                return
-              }
-              await Promise.all(
-                files.map(async fileDirent => {
-                  const fileName = fileDirent.name
-                  if (!fileName.endsWith('.jsonl')) return
-
-                  const srcFile = join(projectPath, fileName)
-                  const destFile = join(destProjectPath, fileName)
-
-                  try {
-                    await copyFile(srcFile, destFile, fsConstants.COPYFILE_EXCL)
-                    result.copied++
-                  } catch {
-                    // EEXIST from COPYFILE_EXCL means dest already exists
-                    result.skipped++
-                  }
-                }),
-              )
-            }),
-          )
-        } finally {
-          try {
-            await rm(tempDir, { recursive: true, force: true })
-          } catch {
-            // Ignore cleanup errors
-          }
+      try {
+        // SCP the projects folder
+        const scpResult = await execFileNoThrow(
+          'scp',
+          ['-rq', `${homespace}.coder:/root/.claude/projects/`, tempDir],
+          { timeout: 300000 },
+        )
+        if (scpResult.code !== 0) {
+          // SCP failed
+          return result
         }
 
-        return result
+        const projectsDir = join(tempDir, 'projects')
+        let projectDirents: Awaited<ReturnType<typeof readdir>>
+        try {
+          projectDirents = await readdir(projectsDir, { withFileTypes: true })
+        } catch {
+          return result
+        }
+
+        // Merge into destination (parallel per project directory)
+        await Promise.all(
+          projectDirents.map(async dirent => {
+            const projectName = dirent.name
+            const projectPath = join(projectsDir, projectName)
+
+            // Skip if not a directory
+            if (!dirent.isDirectory()) return
+
+            const destProjectName = `${projectName}__${homespace}`
+            const destProjectPath = join(destDir, destProjectName)
+
+            try {
+              await mkdir(destProjectPath, { recursive: true })
+            } catch {
+              // Directory may already exist
+            }
+
+            // Copy session files (skip existing)
+            let files: Awaited<ReturnType<typeof readdir>>
+            try {
+              files = await readdir(projectPath, { withFileTypes: true })
+            } catch {
+              return
+            }
+            await Promise.all(
+              files.map(async fileDirent => {
+                const fileName = fileDirent.name
+                if (!fileName.endsWith('.jsonl')) return
+
+                const srcFile = join(projectPath, fileName)
+                const destFile = join(destProjectPath, fileName)
+
+                try {
+                  await copyFile(srcFile, destFile, fsConstants.COPYFILE_EXCL)
+                  result.copied++
+                } catch {
+                  // EEXIST from COPYFILE_EXCL means dest already exists
+                  result.skipped++
+                }
+              }),
+            )
+          }),
+        )
+      } finally {
+        try {
+          await rm(tempDir, { recursive: true, force: true })
+        } catch {
+          // Ignore cleanup errors
+        }
       }
+
+      return result
+    }
     : async () => ({ copied: 0, skipped: 0 })
 
 const collectAllRemoteHostData: (destDir: string) => Promise<{
@@ -190,34 +190,34 @@ const collectAllRemoteHostData: (destDir: string) => Promise<{
 }> =
   process.env.USER_TYPE === 'ant'
     ? async (destDir: string) => {
-        const rHosts = await getRunningRemoteHosts()
-        const result: RemoteHostInfo[] = []
-        let totalCopied = 0
-        let totalSkipped = 0
+      const rHosts = await getRunningRemoteHosts()
+      const result: RemoteHostInfo[] = []
+      let totalCopied = 0
+      let totalSkipped = 0
 
-        // Collect from all hosts in parallel (SCP per host can take seconds)
-        const hostResults = await Promise.all(
-          rHosts.map(async hs => {
-            const sessionCount = await getRemoteHostSessionCount(hs)
-            if (sessionCount > 0) {
-              const { copied, skipped } = await collectFromRemoteHost(
-                hs,
-                destDir,
-              )
-              return { name: hs, sessionCount, copied, skipped }
-            }
-            return { name: hs, sessionCount, copied: 0, skipped: 0 }
-          }),
-        )
+      // Collect from all hosts in parallel (SCP per host can take seconds)
+      const hostResults = await Promise.all(
+        rHosts.map(async hs => {
+          const sessionCount = await getRemoteHostSessionCount(hs)
+          if (sessionCount > 0) {
+            const { copied, skipped } = await collectFromRemoteHost(
+              hs,
+              destDir,
+            )
+            return { name: hs, sessionCount, copied, skipped }
+          }
+          return { name: hs, sessionCount, copied: 0, skipped: 0 }
+        }),
+      )
 
-        for (const hr of hostResults) {
-          result.push({ name: hr.name, sessionCount: hr.sessionCount })
-          totalCopied += hr.copied
-          totalSkipped += hr.skipped
-        }
-
-        return { hosts: result, totalCopied, totalSkipped }
+      for (const hr of hostResults) {
+        result.push({ name: hr.name, sessionCount: hr.sessionCount })
+        totalCopied += hr.copied
+        totalSkipped += hr.skipped
       }
+
+      return { hosts: result, totalCopied, totalSkipped }
+    }
     : async () => ({ hosts: [], totalCopied: 0, totalSkipped: 0 })
 /* eslint-enable custom-rules/no-process-env-top-level */
 
@@ -427,7 +427,7 @@ function getSessionMetaDir(): string {
   return join(getDataDir(), 'session-meta')
 }
 
-const FACET_EXTRACTION_PROMPT = `Analyze this Claude Code session and extract structured facets.
+const FACET_EXTRACTION_PROMPT = `Analyze thisCode Forge session and extract structured facets.
 
 CRITICAL GUIDELINES:
 
@@ -867,7 +867,7 @@ function formatTranscriptForFacets(log: LogOption): string {
   return lines.join('\n')
 }
 
-const SUMMARIZE_CHUNK_PROMPT = `Summarize this portion of a Claude Code session transcript. Focus on:
+const SUMMARIZE_CHUNK_PROMPT = `Summarize this portion of aCode Forge session transcript. Focus on:
 1. What the user asked for
 2. What Claude did (tools used, files modified)
 3. Any friction or issues
@@ -1336,12 +1336,12 @@ type InsightSection = {
 const INSIGHT_SECTIONS: InsightSection[] = [
   {
     name: 'project_areas',
-    prompt: `Analyze this Claude Code usage data and identify project areas.
+    prompt: `Analyze thisCode Forge usage data and identify project areas.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
   "areas": [
-    {"name": "Area name", "session_count": N, "description": "2-3 sentences about what was worked on and how Claude Code was used."}
+    {"name": "Area name", "session_count": N, "description": "2-3 sentences about what was worked on and howCode Forge was used."}
   ]
 }
 
@@ -1350,18 +1350,18 @@ Include 4-5 areas. Skip internal CC operations.`,
   },
   {
     name: 'interaction_style',
-    prompt: `Analyze this Claude Code usage data and describe the user's interaction style.
+    prompt: `Analyze thisCode Forge usage data and describe the user's interaction style.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
-  "narrative": "2-3 paragraphs analyzing HOW the user interacts with Claude Code. Use second person 'you'. Describe patterns: iterate quickly vs detailed upfront specs? Interrupt often or let Claude run? Include specific examples. Use **bold** for key insights.",
+  "narrative": "2-3 paragraphs analyzing HOW the user interacts withCode Forge. Use second person 'you'. Describe patterns: iterate quickly vs detailed upfront specs? Interrupt often or let Claude run? Include specific examples. Use **bold** for key insights.",
   "key_pattern": "One sentence summary of most distinctive interaction style"
 }`,
     maxTokens: 8192,
   },
   {
     name: 'what_works',
-    prompt: `Analyze this Claude Code usage data and identify what's working well for this user. Use second person ("you").
+    prompt: `Analyze thisCode Forge usage data and identify what's working well for this user. Use second person ("you").
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1376,7 +1376,7 @@ Include 3 impressive workflows.`,
   },
   {
     name: 'friction_analysis',
-    prompt: `Analyze this Claude Code usage data and identify friction points for this user. Use second person ("you").
+    prompt: `Analyze thisCode Forge usage data and identify friction points for this user. Use second person ("you").
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1391,7 +1391,7 @@ Include 3 friction categories with 2 examples each.`,
   },
   {
     name: 'suggestions',
-    prompt: `Analyze this Claude Code usage data and suggest improvements.
+    prompt: `Analyze thisCode Forge usage data and suggest improvements.
 
 ## CC FEATURES REFERENCE (pick from these for features_to_try):
 1. **MCP Servers**: Connect Claude to external tools, databases, and APIs via Model Context Protocol.
@@ -1434,7 +1434,7 @@ IMPORTANT for features_to_try: Pick 2-3 from the CC FEATURES REFERENCE above. In
   },
   {
     name: 'on_the_horizon',
-    prompt: `Analyze this Claude Code usage data and identify future opportunities.
+    prompt: `Analyze thisCode Forge usage data and identify future opportunities.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1449,9 +1449,9 @@ Include 3 opportunities. Think BIG - autonomous workflows, parallel agents, iter
   },
   ...(process.env.USER_TYPE === 'ant'
     ? [
-        {
-          name: 'cc_team_improvements',
-          prompt: `Analyze this Claude Code usage data and suggest product improvements for the CC team.
+      {
+        name: 'cc_team_improvements',
+        prompt: `Analyze thisCode Forge usage data and suggest product improvements for the CC team.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1461,11 +1461,11 @@ RESPOND WITH ONLY A VALID JSON OBJECT:
 }
 
 Include 2-3 improvements based on friction patterns observed.`,
-          maxTokens: 8192,
-        },
-        {
-          name: 'model_behavior_improvements',
-          prompt: `Analyze this Claude Code usage data and suggest model behavior improvements.
+        maxTokens: 8192,
+      },
+      {
+        name: 'model_behavior_improvements',
+        prompt: `Analyze thisCode Forge usage data and suggest model behavior improvements.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1475,13 +1475,13 @@ RESPOND WITH ONLY A VALID JSON OBJECT:
 }
 
 Include 2-3 improvements based on friction patterns observed.`,
-          maxTokens: 8192,
-        },
-      ]
+        maxTokens: 8192,
+      },
+    ]
     : []),
   {
     name: 'fun_ending',
-    prompt: `Analyze this Claude Code usage data and find a memorable moment.
+    prompt: `Analyze thisCode Forge usage data and find a memorable moment.
 
 RESPOND WITH ONLY A VALID JSON OBJECT:
 {
@@ -1675,7 +1675,7 @@ async function generateParallelInsights(
   const insights: InsightResults = {}
   for (const { name, result } of results) {
     if (result) {
-      ;(insights as Record<string, unknown>)[name] = result
+      ; (insights as Record<string, unknown>)[name] = result
     }
   }
 
@@ -1735,7 +1735,7 @@ async function generateParallelInsights(
       .join('\n') || ''
 
   // Now generate "At a Glance" with access to other sections' outputs
-  const atAGlancePrompt = `You're writing an "At a Glance" summary for a Claude Code usage insights report for Claude Code users. The goal is to help them understand their usage and improve how they can use Claude better, especially as models improve.
+  const atAGlancePrompt = `You're writing an "At a Glance" summary for aCode Forge usage insights report forCode Forge users. The goal is to help them understand their usage and improve how they can use Claude better, especially as models improve.
 
 Use this 4-part structure:
 
@@ -1743,7 +1743,7 @@ Use this 4-part structure:
 
 2. **What's hindering you** - Split into (a) Claude's fault (misunderstandings, wrong approaches, bugs) and (b) user-side friction (not providing enough context, environment issues -- ideally more general than just one project). Be honest but constructive.
 
-3. **Quick wins to try** - Specific Claude Code features they could try from the examples below, or a workflow technique if you think it's really compelling. (Avoid stuff like "Ask Claude to confirm before taking actions" or "Type out more context up front" which are less compelling.)
+3. **Quick wins to try** - SpecificCode Forge features they could try from the examples below, or a workflow technique if you think it's really compelling. (Avoid stuff like "Ask Claude to confirm before taking actions" or "Type out more context up front" which are less compelling.)
 
 4. **Ambitious workflows for better models** - As we move to much more capable models over the next 3-6 months, what should they prepare for? What workflows that seem impossible now will become possible? Draw from the appropriate section below.
 
@@ -2006,7 +2006,7 @@ function generateHtmlReport(
   const interactionStyle = insights.interaction_style
   const interactionHtml = interactionStyle?.narrative
     ? `
-    <h2 id="section-usage">How You Use Claude Code</h2>
+    <h2 id="section-usage">How You UseCode Forge</h2>
     <div class="narrative">
       ${markdownToHtml(interactionStyle.narrative)}
       ${interactionStyle.key_pattern ? `<div class="key-insight"><strong>Key pattern:</strong> ${escapeHtml(interactionStyle.key_pattern)}</div>` : ''}
@@ -2063,14 +2063,13 @@ function generateHtmlReport(
   const suggestions = insights.suggestions
   const suggestionsHtml = suggestions
     ? `
-    ${
-      suggestions.claude_md_additions &&
+    ${suggestions.claude_md_additions &&
       suggestions.claude_md_additions.length > 0
-        ? `
+      ? `
     <h2 id="section-features">Existing CC Features to Try</h2>
     <div class="claude-md-section">
       <h3>Suggested CLAUDE.md Additions</h3>
-      <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Just copy this into Claude Code to add it to your CLAUDE.md.</p>
+      <p style="font-size: 12px; color: #64748b; margin-bottom: 12px;">Just copy this intoCode Forge to add it to your CLAUDE.md.</p>
       <div class="claude-md-actions">
         <button class="copy-all-btn" onclick="copyAllCheckedClaudeMd()">Copy All Checked</button>
       </div>
@@ -2090,12 +2089,11 @@ function generateHtmlReport(
         .join('')}
     </div>
     `
-        : ''
+      : ''
     }
-    ${
-      suggestions.features_to_try && suggestions.features_to_try.length > 0
-        ? `
-    <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">Just copy this into Claude Code and it'll set it up for you.</p>
+    ${suggestions.features_to_try && suggestions.features_to_try.length > 0
+      ? `
+    <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">Just copy this intoCode Forge and it'll set it up for you.</p>
     <div class="features-section">
       ${suggestions.features_to_try
         .map(
@@ -2104,8 +2102,7 @@ function generateHtmlReport(
           <div class="feature-title">${escapeHtml(feat.feature || '')}</div>
           <div class="feature-oneliner">${escapeHtml(feat.one_liner || '')}</div>
           <div class="feature-why"><strong>Why for you:</strong> ${escapeHtml(feat.why_for_you || '')}</div>
-          ${
-            feat.example_code
+          ${feat.example_code
               ? `
           <div class="feature-examples">
             <div class="feature-example">
@@ -2117,20 +2114,19 @@ function generateHtmlReport(
           </div>
           `
               : ''
-          }
+            }
         </div>
       `,
         )
         .join('')}
     </div>
     `
-        : ''
+      : ''
     }
-    ${
-      suggestions.usage_patterns && suggestions.usage_patterns.length > 0
-        ? `
-    <h2 id="section-patterns">New Ways to Use Claude Code</h2>
-    <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">Just copy this into Claude Code and it'll walk you through it.</p>
+    ${suggestions.usage_patterns && suggestions.usage_patterns.length > 0
+      ? `
+    <h2 id="section-patterns">New Ways to UseCode Forge</h2>
+    <p style="font-size: 13px; color: #64748b; margin-bottom: 12px;">Just copy this intoCode Forge and it'll walk you through it.</p>
     <div class="patterns-section">
       ${suggestions.usage_patterns
         .map(
@@ -2139,11 +2135,10 @@ function generateHtmlReport(
           <div class="pattern-title">${escapeHtml(pat.title || '')}</div>
           <div class="pattern-summary">${escapeHtml(pat.suggestion || '')}</div>
           ${pat.detail ? `<div class="pattern-detail">${escapeHtml(pat.detail)}</div>` : ''}
-          ${
-            pat.copyable_prompt
+          ${pat.copyable_prompt
               ? `
           <div class="copyable-prompt-section">
-            <div class="prompt-label">Paste into Claude Code:</div>
+            <div class="prompt-label">Paste intoCode Forge:</div>
             <div class="copyable-prompt-row">
               <code class="copyable-prompt">${escapeHtml(pat.copyable_prompt)}</code>
               <button class="copy-btn" onclick="copyText(this)">Copy</button>
@@ -2151,14 +2146,14 @@ function generateHtmlReport(
           </div>
           `
               : ''
-          }
+            }
         </div>
       `,
         )
         .join('')}
     </div>
     `
-        : ''
+      : ''
     }
     `
     : ''
@@ -2178,7 +2173,7 @@ function generateHtmlReport(
           <div class="horizon-title">${escapeHtml(opp.title || '')}</div>
           <div class="horizon-possible">${escapeHtml(opp.whats_possible || '')}</div>
           ${opp.how_to_try ? `<div class="horizon-tip"><strong>Getting started:</strong> ${escapeHtml(opp.how_to_try)}</div>` : ''}
-          ${opp.copyable_prompt ? `<div class="pattern-prompt"><div class="prompt-label">Paste into Claude Code:</div><code>${escapeHtml(opp.copyable_prompt)}</code><button class="copy-btn" onclick="copyText(this)">Copy</button></div>` : ''}
+          ${opp.copyable_prompt ? `<div class="pattern-prompt"><div class="prompt-label">Paste intoCode Forge:</div><code>${escapeHtml(opp.copyable_prompt)}</code><button class="copy-btn" onclick="copyText(this)">Copy</button></div>` : ''}
         </div>
       `,
         )
@@ -2201,8 +2196,7 @@ function generateHtmlReport(
       ? `
     <h2 id="section-feedback" class="feedback-header">Closing the Loop: Feedback for Other Teams</h2>
     <p class="feedback-intro">Suggestions for the CC product and model teams based on your usage patterns. Click to expand.</p>
-    ${
-      ccImprovements.length > 0
+    ${ccImprovements.length > 0
         ? `
     <div class="collapsible-section">
       <div class="collapsible-header" onclick="toggleCollapsible(this)">
@@ -2212,24 +2206,23 @@ function generateHtmlReport(
       <div class="collapsible-content">
         <div class="suggestions-section">
           ${ccImprovements
-            .map(
-              imp => `
+          .map(
+            imp => `
             <div class="feedback-card team-card">
               <div class="feedback-title">${escapeHtml(imp.title || '')}</div>
               <div class="feedback-detail">${escapeHtml(imp.detail || '')}</div>
               ${imp.evidence ? `<div class="feedback-evidence"><em>Evidence:</em> ${escapeHtml(imp.evidence)}</div>` : ''}
             </div>
           `,
-            )
-            .join('')}
+          )
+          .join('')}
         </div>
       </div>
     </div>
     `
         : ''
-    }
-    ${
-      modelImprovements.length > 0
+      }
+    ${modelImprovements.length > 0
         ? `
     <div class="collapsible-section">
       <div class="collapsible-header" onclick="toggleCollapsible(this)">
@@ -2239,22 +2232,22 @@ function generateHtmlReport(
       <div class="collapsible-content">
         <div class="suggestions-section">
           ${modelImprovements
-            .map(
-              imp => `
+          .map(
+            imp => `
             <div class="feedback-card model-card">
               <div class="feedback-title">${escapeHtml(imp.title || '')}</div>
               <div class="feedback-detail">${escapeHtml(imp.detail || '')}</div>
               ${imp.evidence ? `<div class="feedback-evidence"><em>Evidence:</em> ${escapeHtml(imp.evidence)}</div>` : ''}
             </div>
           `,
-            )
-            .join('')}
+          )
+          .join('')}
         </div>
       </div>
     </div>
     `
         : ''
-    }
+      }
     `
       : ''
 
@@ -2553,14 +2546,13 @@ function generateHtmlReport(
     <!-- Multi-clauding Section (matching Python reference) -->
     <div class="chart-card" style="margin: 24px 0;">
       <div class="chart-title">Multi-Clauding (Parallel Sessions)</div>
-      ${
-        data.multi_clauding.overlap_events === 0
-          ? `
+      ${data.multi_clauding.overlap_events === 0
+      ? `
         <p style="font-size: 14px; color: #64748b; padding: 8px 0;">
-          No parallel session usage detected. You typically work with one Claude Code session at a time.
+          No parallel session usage detected. You typically work with oneCode Forge session at a time.
         </p>
       `
-          : `
+      : `
         <div style="display: flex; gap: 24px; margin: 12px 0;">
           <div style="text-align: center;">
             <div style="font-size: 24px; font-weight: 700; color: #7c3aed;">${data.multi_clauding.overlap_events}</div>
@@ -2576,11 +2568,11 @@ function generateHtmlReport(
           </div>
         </div>
         <p style="font-size: 13px; color: #475569; margin-top: 12px;">
-          You run multiple Claude Code sessions simultaneously. Multi-clauding is detected when sessions
+          You run multipleCode Forge sessions simultaneously. Multi-clauding is detected when sessions
           overlap in time, suggesting parallel workflows.
         </p>
       `
-      }
+    }
     </div>
 
     <!-- Time of Day & Tool Errors -->
@@ -2727,8 +2719,8 @@ export function buildExportData(
       session_count: data.total_sessions,
       ...(remote_hosts_collected &&
         remote_hosts_collected.length > 0 && {
-          remote_hosts_collected,
-        }),
+        remote_hosts_collected,
+      }),
     },
     aggregated_data: data,
     insights,
@@ -3039,7 +3031,7 @@ function safeKeys(obj: Record<string, unknown> | undefined | null): string[] {
 const usageReport: Command = {
   type: 'prompt',
   name: 'insights',
-  description: 'Generate a report analyzing your Claude Code sessions',
+  description: 'Generate a report analyzing yourCode Forge sessions',
   contentLength: 0, // Dynamic content
   progressMessage: 'analyzing your sessions',
   source: 'builtin',
@@ -3102,7 +3094,7 @@ Then access at: ${s3Url}`
     // Build header with stats
     const sessionLabel =
       data.total_sessions_scanned &&
-      data.total_sessions_scanned > data.total_sessions
+        data.total_sessions_scanned > data.total_sessions
         ? `${data.total_sessions_scanned.toLocaleString()} sessions total · ${data.total_sessions} analyzed`
         : `${data.total_sessions} sessions`
     const stats = [
@@ -3141,7 +3133,7 @@ ${atAGlance.quick_wins ? `**Quick wins to try:** ${atAGlance.quick_wins} See _Fe
 ${atAGlance.ambitious_workflows ? `**Ambitious workflows:** ${atAGlance.ambitious_workflows} See _On the Horizon_.` : ''}`
       : '_No insights generated_'
 
-    const header = `# Claude Code Insights
+    const header = `#Code Forge Insights
 
 ${stats}
 ${data.date_range.start} to ${data.date_range.end}
@@ -3156,7 +3148,7 @@ Your full shareable insights report is ready: ${reportUrl}${uploadHint}`
     return [
       {
         type: 'text',
-        text: `The user just ran /insights to generate a usage report analyzing their Claude Code sessions.
+        text: `The user just ran /insights to generate a usage report analyzing theirCode Forge sessions.
 
 Here is the full insights data:
 ${jsonStringify(insights, null, 2)}

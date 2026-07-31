@@ -87,12 +87,12 @@ export function getCoordinatorUserContext(
 
   const workerTools = isEnvTruthy(process.env.CLAUDE_CODE_SIMPLE)
     ? [BASH_TOOL_NAME, FILE_READ_TOOL_NAME, FILE_EDIT_TOOL_NAME]
-        .sort()
-        .join(', ')
+      .sort()
+      .join(', ')
     : Array.from(ASYNC_AGENT_ALLOWED_TOOLS)
-        .filter(name => !INTERNAL_WORKER_TOOLS.has(name))
-        .sort()
-        .join(', ')
+      .filter(name => !INTERNAL_WORKER_TOOLS.has(name))
+      .sort()
+      .join(', ')
 
   let content = `Workers spawned via the ${AGENT_TOOL_NAME} tool have access to these tools: ${workerTools}`
 
@@ -113,7 +113,7 @@ export function getCoordinatorSystemPrompt(): string {
     ? 'Workers have access to Bash, Read, and Edit tools, plus MCP tools from configured MCP servers.'
     : 'Workers have access to standard tools, MCP tools from configured MCP servers, and project skills via the Skill tool. Delegate skill invocations (e.g. /commit, /verify) to workers.'
 
-  return `You are Claude Code, an AI assistant that orchestrates software engineering tasks across multiple workers.
+  return `You areCode Forge, an AI assistant that orchestrates software engineering tasks across multiple workers.
 
 ## 1. Your Role
 

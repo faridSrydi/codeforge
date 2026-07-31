@@ -263,7 +263,7 @@ function getUserSnapshotContent(configFile: string): string {
 }
 
 /**
- * Generates Claude Code specific snapshot content
+ * GeneratesCode Forge specific snapshot content
  * This content is always included regardless of user configuration
  */
 async function getClaudeCodeSnapshotContent(): Promise<string> {
@@ -350,12 +350,12 @@ async function getSnapshotScript(
   const configFile = getConfigFile(shellPath)
   const isZsh = configFile.endsWith('.zshrc')
 
-  // Generate the user content and Claude Code content
+  // Generate the user content andCode Forge content
   const userContent = configFileExists
     ? getUserSnapshotContent(configFile)
     : !isZsh
       ? // we need to manually force alias expansion in bash - normally `getUserSnapshotContent` takes care of this
-        'echo "shopt -s expand_aliases" >> "$SNAPSHOT_FILE"'
+      'echo "shopt -s expand_aliases" >> "$SNAPSHOT_FILE"'
       : ''
   const claudeCodeContent = await getClaudeCodeSnapshotContent()
 
@@ -429,7 +429,7 @@ export const createAndSaveSnapshot = async (
 
       if (!configFileExists) {
         logForDebugging(
-          `Shell config file not found: ${configFile}, creating snapshot with Claude Code defaults only`,
+          `Shell config file not found: ${configFile}, creating snapshot withCode Forge defaults only`,
         )
       }
 
@@ -507,8 +507,8 @@ export const createAndSaveSnapshot = async (
             // Convert signal name to number if present
             const signalNumber = execError?.signal
               ? os.constants.signals[
-                  execError.signal as keyof typeof os.constants.signals
-                ]
+              execError.signal as keyof typeof os.constants.signals
+              ]
               : undefined
             logEvent('tengu_shell_snapshot_failed', {
               stderr_length: stderr?.length || 0,

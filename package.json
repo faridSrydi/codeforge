@@ -8,6 +8,7 @@
     "start": "bun run src/entrypoints/cli.tsx",
     "dev": "bun --watch run src/entrypoints/cli.tsx",
     "build": "bun build src/entrypoints/cli.tsx --outdir dist --target bun --define 'MACRO.VERSION=\"1.0.0-dev\"' --define 'MACRO.BUILD_TIME=\"\"' --define 'MACRO.PACKAGE_URL=\"@anthropic-ai/claude-code\"' --define 'MACRO.NATIVE_PACKAGE_URL=\"\"' --define 'MACRO.FEEDBACK_CHANNEL=\"\"' --define 'MACRO.ISSUES_EXPLAINER=\"\"' --define 'MACRO.VERSION_CHANGELOG=\"\"'",
+    "build:binaries": "bun run scripts/build-binaries.ts",
     "typecheck": "bun x tsc --noEmit"
   },
   "dependencies": {

@@ -73,7 +73,7 @@ export interface SlackContext {
 }
 
 /**
- * ClaudeCodeInternalEvent represents events logged from Claude Code via Statsig
+ * ClaudeCodeInternalEvent represents events logged fromCode Forge via Statsig
  * This schema matches the structure in claude-cli-internal/src/services/statsig.ts
  * Source table: proj-product-data-nhme.raw_statsig_internal_tools.events
  */
@@ -465,7 +465,7 @@ export const EnvironmentMetadata: MessageFns<EnvironmentMetadata> = {
     message.wsl_version = object.wsl_version ?? ''
     message.github_actions_metadata =
       object.github_actions_metadata !== undefined &&
-      object.github_actions_metadata !== null
+        object.github_actions_metadata !== null
         ? GitHubActionsMetadata.fromPartial(object.github_actions_metadata)
         : undefined
     message.arch = object.arch ?? ''
@@ -823,19 +823,19 @@ type Builtin =
 type DeepPartial<T> = T extends Builtin
   ? T
   : T extends globalThis.Array<infer U>
-    ? globalThis.Array<DeepPartial<U>>
-    : T extends ReadonlyArray<infer U>
-      ? ReadonlyArray<DeepPartial<U>>
-      : T extends {}
-        ? { [K in keyof T]?: DeepPartial<T[K]> }
-        : Partial<T>
+  ? globalThis.Array<DeepPartial<U>>
+  : T extends ReadonlyArray<infer U>
+  ? ReadonlyArray<DeepPartial<U>>
+  : T extends {}
+  ? { [K in keyof T]?: DeepPartial<T[K]> }
+  : Partial<T>
 
 type KeysOfUnion<T> = T extends T ? keyof T : never
 type Exact<P, I extends P> = P extends Builtin
   ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & {
-      [K in Exclude<keyof I, KeysOfUnion<P>>]: never
-    }
+    [K in Exclude<keyof I, KeysOfUnion<P>>]: never
+  }
 
 function fromTimestamp(t: Timestamp): Date {
   let millis = (t.seconds || 0) * 1_000

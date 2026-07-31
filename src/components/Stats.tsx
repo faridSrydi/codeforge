@@ -94,7 +94,7 @@ export function Stats(t0) {
   const allTimePromise = t1;
   let t2;
   if ($[1] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = <Box marginTop={1}><Spinner /><Text> Loading your Claude Code stats…</Text></Box>;
+    t2 = <Box marginTop={1}><Spinner /><Text> Loading yourCode Forge stats…</Text></Box>;
     $[1] = t2;
   } else {
     t2 = $[1];
@@ -242,7 +242,7 @@ function StatsContent(t0) {
   if (allTimeResult.type === "empty") {
     let t7;
     if ($[15] === Symbol.for("react.memo_cache_sentinel")) {
-      t7 = <Box marginTop={1}><Text color="warning">No stats available yet. Start using Claude Code!</Text></Box>;
+      t7 = <Box marginTop={1}><Text color="warning">No stats available yet. Start usingCode Forge!</Text></Box>;
       $[15] = t7;
     } else {
       t7 = $[15];
@@ -425,156 +425,156 @@ function OverviewTab({
     }
   }
   return <Box flexDirection="column" marginTop={1}>
-      {/* Activity Heatmap - always shows all-time data */}
-      {allTimeStats.dailyActivity.length > 0 && <Box flexDirection="column" marginBottom={1}>
-          <Ansi>
-            {generateHeatmap(allTimeStats.dailyActivity, {
+    {/* Activity Heatmap - always shows all-time data */}
+    {allTimeStats.dailyActivity.length > 0 && <Box flexDirection="column" marginBottom={1}>
+      <Ansi>
+        {generateHeatmap(allTimeStats.dailyActivity, {
           terminalWidth
         })}
-          </Ansi>
-        </Box>}
+      </Ansi>
+    </Box>}
 
-      {/* Date range selector */}
-      <DateRangeSelector dateRange={dateRange} isLoading={isLoading} />
+    {/* Date range selector */}
+    <DateRangeSelector dateRange={dateRange} isLoading={isLoading} />
 
-      {/* Section 1: Usage */}
-      <Box flexDirection="row" gap={4} marginBottom={1}>
-        <Box flexDirection="column" width={28}>
-          {favoriteModel && <Text wrap="truncate">
-              Favorite model:{' '}
-              <Text color="claude" bold>
-                {renderModelName(favoriteModel[0])}
-              </Text>
-            </Text>}
-        </Box>
-        <Box flexDirection="column" width={28}>
-          <Text wrap="truncate">
-            Total tokens:{' '}
-            <Text color="claude">{formatNumber(totalTokens)}</Text>
+    {/* Section 1: Usage */}
+    <Box flexDirection="row" gap={4} marginBottom={1}>
+      <Box flexDirection="column" width={28}>
+        {favoriteModel && <Text wrap="truncate">
+          Favorite model:{' '}
+          <Text color="claude" bold>
+            {renderModelName(favoriteModel[0])}
           </Text>
-        </Box>
+        </Text>}
       </Box>
+      <Box flexDirection="column" width={28}>
+        <Text wrap="truncate">
+          Total tokens:{' '}
+          <Text color="claude">{formatNumber(totalTokens)}</Text>
+        </Text>
+      </Box>
+    </Box>
 
-      {/* Section 2: Activity - Row 1: Sessions | Longest session */}
+    {/* Section 2: Activity - Row 1: Sessions | Longest session */}
+    <Box flexDirection="row" gap={4}>
+      <Box flexDirection="column" width={28}>
+        <Text wrap="truncate">
+          Sessions:{' '}
+          <Text color="claude">{formatNumber(stats.totalSessions)}</Text>
+        </Text>
+      </Box>
+      <Box flexDirection="column" width={28}>
+        {stats.longestSession && <Text wrap="truncate">
+          Longest session:{' '}
+          <Text color="claude">
+            {formatDuration(stats.longestSession.duration)}
+          </Text>
+        </Text>}
+      </Box>
+    </Box>
+
+    {/* Row 2: Active days | Longest streak */}
+    <Box flexDirection="row" gap={4}>
+      <Box flexDirection="column" width={28}>
+        <Text wrap="truncate">
+          Active days: <Text color="claude">{stats.activeDays}</Text>
+          <Text color="subtle">/{rangeDays}</Text>
+        </Text>
+      </Box>
+      <Box flexDirection="column" width={28}>
+        <Text wrap="truncate">
+          Longest streak:{' '}
+          <Text color="claude" bold>
+            {stats.streaks.longestStreak}
+          </Text>{' '}
+          {stats.streaks.longestStreak === 1 ? 'day' : 'days'}
+        </Text>
+      </Box>
+    </Box>
+
+    {/* Row 3: Most active day | Current streak */}
+    <Box flexDirection="row" gap={4}>
+      <Box flexDirection="column" width={28}>
+        {stats.peakActivityDay && <Text wrap="truncate">
+          Most active day:{' '}
+          <Text color="claude">{formatPeakDay(stats.peakActivityDay)}</Text>
+        </Text>}
+      </Box>
+      <Box flexDirection="column" width={28}>
+        <Text wrap="truncate">
+          Current streak:{' '}
+          <Text color="claude" bold>
+            {allTimeStats.streaks.currentStreak}
+          </Text>{' '}
+          {allTimeStats.streaks.currentStreak === 1 ? 'day' : 'days'}
+        </Text>
+      </Box>
+    </Box>
+
+    {/* Speculation time saved (ant-only) */}
+    {"external" === 'ant' && stats.totalSpeculationTimeSavedMs > 0 && <Box flexDirection="row" gap={4}>
+      <Box flexDirection="column" width={28}>
+        <Text wrap="truncate">
+          Speculation saved:{' '}
+          <Text color="claude">
+            {formatDuration(stats.totalSpeculationTimeSavedMs)}
+          </Text>
+        </Text>
+      </Box>
+    </Box>}
+
+    {/* Shot stats (ant-only) */}
+    {shotStatsData && <>
+      <Box marginTop={1}>
+        <Text>Shot distribution</Text>
+      </Box>
       <Box flexDirection="row" gap={4}>
         <Box flexDirection="column" width={28}>
           <Text wrap="truncate">
-            Sessions:{' '}
-            <Text color="claude">{formatNumber(stats.totalSessions)}</Text>
+            {shotStatsData.buckets[0]!.label}:{' '}
+            <Text color="claude">{shotStatsData.buckets[0]!.count}</Text>
+            <Text color="subtle"> ({shotStatsData.buckets[0]!.pct}%)</Text>
           </Text>
         </Box>
         <Box flexDirection="column" width={28}>
-          {stats.longestSession && <Text wrap="truncate">
-              Longest session:{' '}
-              <Text color="claude">
-                {formatDuration(stats.longestSession.duration)}
-              </Text>
-            </Text>}
+          <Text wrap="truncate">
+            {shotStatsData.buckets[1]!.label}:{' '}
+            <Text color="claude">{shotStatsData.buckets[1]!.count}</Text>
+            <Text color="subtle"> ({shotStatsData.buckets[1]!.pct}%)</Text>
+          </Text>
         </Box>
       </Box>
-
-      {/* Row 2: Active days | Longest streak */}
       <Box flexDirection="row" gap={4}>
         <Box flexDirection="column" width={28}>
           <Text wrap="truncate">
-            Active days: <Text color="claude">{stats.activeDays}</Text>
-            <Text color="subtle">/{rangeDays}</Text>
+            {shotStatsData.buckets[2]!.label}:{' '}
+            <Text color="claude">{shotStatsData.buckets[2]!.count}</Text>
+            <Text color="subtle"> ({shotStatsData.buckets[2]!.pct}%)</Text>
           </Text>
         </Box>
         <Box flexDirection="column" width={28}>
           <Text wrap="truncate">
-            Longest streak:{' '}
-            <Text color="claude" bold>
-              {stats.streaks.longestStreak}
-            </Text>{' '}
-            {stats.streaks.longestStreak === 1 ? 'day' : 'days'}
+            {shotStatsData.buckets[3]!.label}:{' '}
+            <Text color="claude">{shotStatsData.buckets[3]!.count}</Text>
+            <Text color="subtle"> ({shotStatsData.buckets[3]!.pct}%)</Text>
           </Text>
         </Box>
       </Box>
-
-      {/* Row 3: Most active day | Current streak */}
       <Box flexDirection="row" gap={4}>
         <Box flexDirection="column" width={28}>
-          {stats.peakActivityDay && <Text wrap="truncate">
-              Most active day:{' '}
-              <Text color="claude">{formatPeakDay(stats.peakActivityDay)}</Text>
-            </Text>}
-        </Box>
-        <Box flexDirection="column" width={28}>
           <Text wrap="truncate">
-            Current streak:{' '}
-            <Text color="claude" bold>
-              {allTimeStats.streaks.currentStreak}
-            </Text>{' '}
-            {allTimeStats.streaks.currentStreak === 1 ? 'day' : 'days'}
+            Avg/session:{' '}
+            <Text color="claude">{shotStatsData.avgShots}</Text>
           </Text>
         </Box>
       </Box>
+    </>}
 
-      {/* Speculation time saved (ant-only) */}
-      {"external" === 'ant' && stats.totalSpeculationTimeSavedMs > 0 && <Box flexDirection="row" gap={4}>
-            <Box flexDirection="column" width={28}>
-              <Text wrap="truncate">
-                Speculation saved:{' '}
-                <Text color="claude">
-                  {formatDuration(stats.totalSpeculationTimeSavedMs)}
-                </Text>
-              </Text>
-            </Box>
-          </Box>}
-
-      {/* Shot stats (ant-only) */}
-      {shotStatsData && <>
-          <Box marginTop={1}>
-            <Text>Shot distribution</Text>
-          </Box>
-          <Box flexDirection="row" gap={4}>
-            <Box flexDirection="column" width={28}>
-              <Text wrap="truncate">
-                {shotStatsData.buckets[0]!.label}:{' '}
-                <Text color="claude">{shotStatsData.buckets[0]!.count}</Text>
-                <Text color="subtle"> ({shotStatsData.buckets[0]!.pct}%)</Text>
-              </Text>
-            </Box>
-            <Box flexDirection="column" width={28}>
-              <Text wrap="truncate">
-                {shotStatsData.buckets[1]!.label}:{' '}
-                <Text color="claude">{shotStatsData.buckets[1]!.count}</Text>
-                <Text color="subtle"> ({shotStatsData.buckets[1]!.pct}%)</Text>
-              </Text>
-            </Box>
-          </Box>
-          <Box flexDirection="row" gap={4}>
-            <Box flexDirection="column" width={28}>
-              <Text wrap="truncate">
-                {shotStatsData.buckets[2]!.label}:{' '}
-                <Text color="claude">{shotStatsData.buckets[2]!.count}</Text>
-                <Text color="subtle"> ({shotStatsData.buckets[2]!.pct}%)</Text>
-              </Text>
-            </Box>
-            <Box flexDirection="column" width={28}>
-              <Text wrap="truncate">
-                {shotStatsData.buckets[3]!.label}:{' '}
-                <Text color="claude">{shotStatsData.buckets[3]!.count}</Text>
-                <Text color="subtle"> ({shotStatsData.buckets[3]!.pct}%)</Text>
-              </Text>
-            </Box>
-          </Box>
-          <Box flexDirection="row" gap={4}>
-            <Box flexDirection="column" width={28}>
-              <Text wrap="truncate">
-                Avg/session:{' '}
-                <Text color="claude">{shotStatsData.avgShots}</Text>
-              </Text>
-            </Box>
-          </Box>
-        </>}
-
-      {/* Fun factoid */}
-      {factoid && <Box marginTop={1}>
-          <Text color="suggestion">{factoid}</Text>
-        </Box>}
-    </Box>;
+    {/* Fun factoid */}
+    {factoid && <Box marginTop={1}>
+      <Text color="suggestion">{factoid}</Text>
+    </Box>}
+  </Box>;
 }
 
 // Famous books and their approximate token counts (words * ~1.3)
@@ -809,9 +809,9 @@ function ModelsTab(t0) {
     t10 = $[14];
   }
   return <Box flexDirection="column" marginTop={1}>{chartOutput && <Box flexDirection="column" marginBottom={1}><Text bold={true}>Tokens per Day</Text><Ansi>{chartOutput.chart}</Ansi><Text color="subtle">{chartOutput.xAxisLabels}</Text><Box>{chartOutput.legend.map(_temp1)}</Box></Box>}{t3}<Box flexDirection="row" gap={4}><Box flexDirection="column" width={36}>{leftModels.map(t4 => {
-          const [model_0, usage_0] = t4;
-          return <ModelEntry key={model_0} model={model_0} usage={usage_0} totalTokens={totalTokens} />;
-        })}</Box>{t9}</Box>{t10}</Box>;
+    const [model_0, usage_0] = t4;
+    return <ModelEntry key={model_0} model={model_0} usage={usage_0} totalTokens={totalTokens} />;
+  })}</Box>{t9}</Box>{t10}</Box>;
 }
 function _temp1(item, i) {
   return <Text key={item.model}>{i > 0 ? " \xB7 " : ""}<Ansi>{item.coloredBullet}</Ansi> {item.model}</Text>;

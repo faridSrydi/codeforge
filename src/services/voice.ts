@@ -245,8 +245,8 @@ export async function requestMicrophonePermission(): Promise<boolean> {
   }
 
   const started = await startRecording(
-    _chunk => {}, // discard audio data — this is a permission probe only
-    () => {}, // ignore silence-detection end signal
+    _chunk => { }, // discard audio data — this is a permission probe only
+    () => { }, // ignore silence-detection end signal
     { silenceDetection: false },
   )
   if (started) {
@@ -262,7 +262,7 @@ export async function checkRecordingAvailability(): Promise<RecordingAvailabilit
     return {
       available: false,
       reason:
-        'Voice mode requires microphone access, but no audio device is available in this environment.\n\nTo use voice mode, run Claude Code locally instead.',
+        'Voice mode requires microphone access, but no audio device is available in this environment.\n\nTo use voice mode, runCode Forge locally instead.',
     }
   }
 
@@ -282,7 +282,7 @@ export async function checkRecordingAvailability(): Promise<RecordingAvailabilit
   }
 
   const wslNoAudioReason =
-    'Voice mode could not access an audio device in WSL.\n\nWSL2 with WSLg (Windows 11) provides audio via PulseAudio — if you are on Windows 10 or WSL1, run Claude Code in native Windows instead.'
+    'Voice mode could not access an audio device in WSL.\n\nWSL2 with WSLg (Windows 11) provides audio via PulseAudio — if you are on Windows 10 or WSL1, runCode Forge in native Windows instead.'
 
   // On Linux (including WSL), probe arecord. hasCommand() is insufficient:
   // the binary can exist while the device open() fails (WSL1, Win10-WSL2,
@@ -449,7 +449,7 @@ function startSoxRecording(
   })
 
   // Consume stderr to prevent backpressure
-  child.stderr?.on('data', () => {})
+  child.stderr?.on('data', () => { })
 
   child.on('close', () => {
     activeRecorder = null
@@ -496,7 +496,7 @@ function startArecordRecording(
   })
 
   // Consume stderr to prevent backpressure
-  child.stderr?.on('data', () => {})
+  child.stderr?.on('data', () => { })
 
   child.on('close', () => {
     activeRecorder = null

@@ -39,7 +39,7 @@ export function createWhatsNewFeed(releaseNotes: string[]): FeedConfig {
       text: note
     };
   });
-  const emptyMessage = "external" === 'ant' ? 'Unable to fetch latest claude-cli-internal commits' : 'Check the Claude Code changelog for updates';
+  const emptyMessage = "external" === 'ant' ? 'Unable to fetch latest claude-cli-internal commits' : 'Check theCode Forge changelog for updates';
   return {
     title: "external" === 'ant' ? "What's new [ANT-ONLY: Latest CC commits]" : "What's new",
     lines,
@@ -73,17 +73,17 @@ export function createProjectOnboardingFeed(steps: Step[]): FeedConfig {
 }
 export function createGuestPassesFeed(): FeedConfig {
   const reward = getCachedReferrerReward();
-  const subtitle = reward ? `Share Claude Code and earn ${formatCreditAmount(reward)} of extra usage` : 'Share Claude Code with friends';
+  const subtitle = reward ? `ShareCode Forge and earn ${formatCreditAmount(reward)} of extra usage` : 'ShareCode Forge with friends';
   return {
     title: '3 guest passes',
     lines: [],
     customContent: {
       content: <>
-          <Box marginY={1}>
-            <Text color="claude">[✻] [✻] [✻]</Text>
-          </Box>
-          <Text dimColor>{subtitle}</Text>
-        </>,
+        <Box marginY={1}>
+          <Text color="claude">[✻] [✻] [✻]</Text>
+        </Box>
+        <Text dimColor>{subtitle}</Text>
+      </>,
       width: 48
     },
     footer: '/passes'

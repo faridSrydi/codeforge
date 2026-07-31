@@ -415,7 +415,7 @@ export function useVoice({
                   }
                 },
                 onError: () => resolve(),
-                onClose: () => {},
+                onClose: () => { },
                 onReady: conn => {
                   if (isStale()) {
                     conn.close()
@@ -501,7 +501,7 @@ export function useVoice({
           } else if (!hadAudioSignal) {
             // Distinguish silent mic (capture issue) from speech not recognized.
             onErrorRef.current?.(
-              'No audio detected from microphone. Check that the correct input device is selected and that Claude Code has microphone access.',
+              'No audio detected from microphone. Check that the correct input device is selected and thatCode Forge has microphone access.',
             )
           } else {
             onErrorRef.current?.('No speech detected.')

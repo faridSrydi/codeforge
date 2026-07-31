@@ -2,7 +2,7 @@
  * Files API client for managing files
  *
  * This module provides functionality to download and upload files to Anthropic Public Files API.
- * Used by the Claude Code agent to download file attachments at session startup.
+ * Used by theCode Forge agent to download file attachments at session startup.
  *
  * API Reference: https://docs.anthropic.com/en/api/files-content
  */
@@ -353,16 +353,16 @@ export async function downloadSessionFiles(
  */
 export type UploadResult =
   | {
-      path: string
-      fileId: string
-      size: number
-      success: true
-    }
+    path: string
+    fileId: string
+    size: number
+    success: true
+  }
   | {
-      path: string
-      error: string
-      success: false
-    }
+    path: string
+    error: string
+    success: false
+  }
 
 /**
  * Upload a single file to the Files API (BYOC mode)
@@ -433,8 +433,8 @@ export async function uploadFile(
   bodyParts.push(
     Buffer.from(
       `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
-        `Content-Type: application/octet-stream\r\n\r\n`,
+      `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
+      `Content-Type: application/octet-stream\r\n\r\n`,
     ),
   )
   bodyParts.push(content)
@@ -444,8 +444,8 @@ export async function uploadFile(
   bodyParts.push(
     Buffer.from(
       `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="purpose"\r\n\r\n` +
-        `user_data\r\n`,
+      `Content-Disposition: form-data; name="purpose"\r\n\r\n` +
+      `user_data\r\n`,
     ),
   )
 

@@ -1,6 +1,7 @@
 import Anthropic, { type ClientOptions } from '@anthropic-ai/sdk'
 import { randomUUID } from 'crypto'
 import type { GoogleAuth } from 'google-auth-library'
+import { getVPSCredentials } from 'src/utils/vpsAuthStorage.js'
 import {
   checkAndRefreshOAuthTokenIfNeeded,
   getAnthropicApiKey,
@@ -298,16 +299,22 @@ export async function getAnthropicClient({
   }
 
   // Determine authentication method based on available tokens
+  const vpsCreds = getVPSCredentials()
+  if (vpsCreds && vpsCreds.token) {
+    defaultHeaders['Authorization'] = `Bearer ${vpsCreds.token}`
+  }
+
   const clientConfig: ConstructorParameters<typeof Anthropic>[0] = {
-    apiKey: isClaudeAISubscriber() ? null : apiKey || getAnthropicApiKey(),
+    apiKey: vpsCreds ? vpsCreds.token : isClaudeAISubscriber() ? null : apiKey || getAnthropicApiKey(),
     authToken: isClaudeAISubscriber()
       ? getClaudeAIOAuthTokens()?.accessToken
       : undefined,
-    // Set baseURL from OAuth config when using staging OAuth
-    ...(process.env.USER_TYPE === 'ant' &&
-    isEnvTruthy(process.env.USE_STAGING_OAUTH)
-      ? { baseURL: getOauthConfig().BASE_API_URL }
-      : {}),
+    ...(vpsCreds && vpsCreds.serverUrl
+      ? { baseURL: `${vpsCreds.serverUrl.replace(/\/+$/, '')}/v1` }
+      : process.env.USER_TYPE === 'ant' &&
+        isEnvTruthy(process.env.USE_STAGING_OAUTH)
+        ? { baseURL: getOauthConfig().BASE_API_URL }
+        : {}),
     ...ARGS,
     ...(isDebugToStdErr() && { logger: createStderrLogger() }),
   }

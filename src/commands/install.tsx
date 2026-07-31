@@ -221,65 +221,65 @@ function Install({
     }
   }, [state, onDone]);
   return <Box flexDirection="column" marginTop={1}>
-      {state.type === 'checking' && <Text color="claude">Checking installation status...</Text>}
+    {state.type === 'checking' && <Text color="claude">Checking installation status...</Text>}
 
-      {state.type === 'cleaning-npm' && <Text color="warning">Cleaning up old npm installations...</Text>}
+    {state.type === 'cleaning-npm' && <Text color="warning">Cleaning up old npm installations...</Text>}
 
-      {state.type === 'installing' && <Text color="claude">
-          Installing Claude Code native build {state.version}...
-        </Text>}
+    {state.type === 'installing' && <Text color="claude">
+      InstallingCode Forge native build {state.version}...
+    </Text>}
 
-      {state.type === 'setting-up' && <Text color="claude">Setting up launcher and shell integration...</Text>}
+    {state.type === 'setting-up' && <Text color="claude">Setting up launcher and shell integration...</Text>}
 
-      {state.type === 'set-up' && <SetupNotes messages={state.messages} />}
+    {state.type === 'set-up' && <SetupNotes messages={state.messages} />}
 
-      {state.type === 'success' && <Box flexDirection="column" gap={1}>
-          <Box>
-            <StatusIcon status="success" withSpace />
-            <Text color="success" bold>
-              Claude Code successfully installed!
-            </Text>
-          </Box>
-          <Box marginLeft={2} flexDirection="column" gap={1}>
-            {state.version !== 'current' && <Box>
-                <Text dimColor>Version: </Text>
-                <Text color="claude">{state.version}</Text>
-              </Box>}
-            <Box>
-              <Text dimColor>Location: </Text>
-              <Text color="text">{getInstallationPath()}</Text>
-            </Box>
-          </Box>
-          <Box marginLeft={2} flexDirection="column" gap={1}>
-            <Box marginTop={1}>
-              <Text dimColor>Next: Run </Text>
-              <Text color="claude" bold>
-                claude --help
-              </Text>
-              <Text dimColor> to get started</Text>
-            </Box>
-          </Box>
-          {state.setupMessages && <SetupNotes messages={state.setupMessages} />}
+    {state.type === 'success' && <Box flexDirection="column" gap={1}>
+      <Box>
+        <StatusIcon status="success" withSpace />
+        <Text color="success" bold>
+          Code Forge successfully installed!
+        </Text>
+      </Box>
+      <Box marginLeft={2} flexDirection="column" gap={1}>
+        {state.version !== 'current' && <Box>
+          <Text dimColor>Version: </Text>
+          <Text color="claude">{state.version}</Text>
         </Box>}
+        <Box>
+          <Text dimColor>Location: </Text>
+          <Text color="text">{getInstallationPath()}</Text>
+        </Box>
+      </Box>
+      <Box marginLeft={2} flexDirection="column" gap={1}>
+        <Box marginTop={1}>
+          <Text dimColor>Next: Run </Text>
+          <Text color="claude" bold>
+            claude --help
+          </Text>
+          <Text dimColor> to get started</Text>
+        </Box>
+      </Box>
+      {state.setupMessages && <SetupNotes messages={state.setupMessages} />}
+    </Box>}
 
-      {state.type === 'error' && <Box flexDirection="column" gap={1}>
-          <Box>
-            <StatusIcon status="error" withSpace />
-            <Text color="error">Installation failed</Text>
-          </Box>
-          <Text color="error">{state.message}</Text>
-          <Box marginTop={1}>
-            <Text dimColor>Try running with --force to override checks</Text>
-          </Box>
-        </Box>}
-    </Box>;
+    {state.type === 'error' && <Box flexDirection="column" gap={1}>
+      <Box>
+        <StatusIcon status="error" withSpace />
+        <Text color="error">Installation failed</Text>
+      </Box>
+      <Text color="error">{state.message}</Text>
+      <Box marginTop={1}>
+        <Text dimColor>Try running with --force to override checks</Text>
+      </Box>
+    </Box>}
+  </Box>;
 }
 
 // This is only used from cli.tsx, not as a slash command
 export const install = {
   type: 'local-jsx' as const,
   name: 'install',
-  description: 'Install Claude Code native build',
+  description: 'InstallCode Forge native build',
   argumentHint: '[options]',
   async call(onDone: (result: string, options?: {
     display?: CommandResultDisplay;

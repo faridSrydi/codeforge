@@ -8,3 +8,5 @@ package-lock.json
 vps/node_modules/
 vps/data/
 vps/.env
+*.bun-build
+.*.bun-build

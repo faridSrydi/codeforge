@@ -566,24 +566,24 @@ function cacheToStats(
   const peakActivityDay =
     dailyActivityArray.length > 0
       ? dailyActivityArray.reduce((max, d) =>
-          d.messageCount > max.messageCount ? d : max,
-        ).date
+        d.messageCount > max.messageCount ? d : max,
+      ).date
       : null
 
   const peakActivityHour =
     hourCountsMap.size > 0
       ? Array.from(hourCountsMap.entries()).reduce((max, [hour, count]) =>
-          count > max[1] ? [hour, count] : max,
-        )[0]
+        count > max[1] ? [hour, count] : max,
+      )[0]
       : null
 
   const totalDays =
     firstSessionDate && lastSessionDate
       ? Math.ceil(
-          (new Date(lastSessionDate).getTime() -
-            new Date(firstSessionDate).getTime()) /
-            (1000 * 60 * 60 * 24),
-        ) + 1
+        (new Date(lastSessionDate).getTime() -
+          new Date(firstSessionDate).getTime()) /
+        (1000 * 60 * 60 * 24),
+      ) + 1
       : 0
 
   const totalSpeculationTimeSavedMs =
@@ -634,7 +634,7 @@ function cacheToStats(
 }
 
 /**
- * Aggregates stats from all Claude Code sessions across all projects.
+ * Aggregates stats from allCode Forge sessions across all projects.
  * Uses a disk cache to avoid reprocessing historical data.
  */
 export async function aggregateClaudeCodeStats(): Promise<ClaudeCodeStats> {
@@ -783,8 +783,8 @@ function processedStatsToClaudeCodeStats(
   const peakActivityDay =
     dailyActivitySorted.length > 0
       ? dailyActivitySorted.reduce((max, d) =>
-          d.messageCount > max.messageCount ? d : max,
-        ).date
+        d.messageCount > max.messageCount ? d : max,
+      ).date
       : null
 
   // Peak activity hour
@@ -792,21 +792,21 @@ function processedStatsToClaudeCodeStats(
   const peakActivityHour =
     hourEntries.length > 0
       ? parseInt(
-          hourEntries.reduce((max, [hour, count]) =>
-            count > parseInt(max[1].toString()) ? [hour, count] : max,
-          )[0],
-          10,
-        )
+        hourEntries.reduce((max, [hour, count]) =>
+          count > parseInt(max[1].toString()) ? [hour, count] : max,
+        )[0],
+        10,
+      )
       : null
 
   // Total days in range
   const totalDays =
     firstSessionDate && lastSessionDate
       ? Math.ceil(
-          (new Date(lastSessionDate).getTime() -
-            new Date(firstSessionDate).getTime()) /
-            (1000 * 60 * 60 * 24),
-        ) + 1
+        (new Date(lastSessionDate).getTime() -
+          new Date(firstSessionDate).getTime()) /
+        (1000 * 60 * 60 * 24),
+      ) + 1
       : 0
 
   const result: ClaudeCodeStats = {

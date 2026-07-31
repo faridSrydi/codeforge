@@ -1,7 +1,7 @@
 /**
  * Undercover mode — safety utilities for contributing to public/open-source repos.
  *
- * When active, Claude Code adds safety instructions to commit/PR prompts and
+ * When active,Code Forge adds safety instructions to commit/PR prompts and
  * strips all attribution to avoid leaking internal model codenames, project
  * names, or other Anthropic-internal information. The model is not told what
  * model it is.
@@ -64,7 +64,7 @@ GOOD:
 BAD (never write these):
 - "Fix bug found while testing with Claude Capybara"
 - "1-shotted by claude-opus-4-6"
-- "Generated with Claude Code"
+- "Generated withCode Forge"
 - "Co-Authored-By: Claude Opus 4.6 <…>"
 `
   }

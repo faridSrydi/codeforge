@@ -76,8 +76,8 @@ export function redactSensitiveInfo(text: string): string {
   redacted = redacted.replace(/"(sk-ant[^\s"']{24,})"/g, '"[REDACTED_API_KEY]"');
   // Then handle the cases without quotes - more general pattern
   redacted = redacted.replace(
-  // eslint-disable-next-line custom-rules/no-lookbehind-regex -- .replace(re, string) on /bug path: no-match returns same string (Object.is)
-  /(?<![A-Za-z0-9"'])(sk-ant-?[A-Za-z0-9_-]{10,})(?![A-Za-z0-9"'])/g, '[REDACTED_API_KEY]');
+    // eslint-disable-next-line custom-rules/no-lookbehind-regex -- .replace(re, string) on /bug path: no-match returns same string (Object.is)
+    /(?<![A-Za-z0-9"'])(sk-ant-?[A-Za-z0-9_-]{10,})(?![A-Za-z0-9"'])/g, '[REDACTED_API_KEY]');
 
   // AWS keys - AWSXXXX format - add the pattern we need for the test
   redacted = redacted.replace(/AWS key: "(AWS[A-Z0-9]{20,})"/g, 'AWS key: "[REDACTED_AWS_KEY]"');
@@ -87,13 +87,13 @@ export function redactSensitiveInfo(text: string): string {
 
   // Google Cloud keys
   redacted = redacted.replace(
-  // eslint-disable-next-line custom-rules/no-lookbehind-regex -- same as above
-  /(?<![A-Za-z0-9])(AIza[A-Za-z0-9_-]{35})(?![A-Za-z0-9])/g, '[REDACTED_GCP_KEY]');
+    // eslint-disable-next-line custom-rules/no-lookbehind-regex -- same as above
+    /(?<![A-Za-z0-9])(AIza[A-Za-z0-9_-]{35})(?![A-Za-z0-9])/g, '[REDACTED_GCP_KEY]');
 
   // Vertex AI service account keys
   redacted = redacted.replace(
-  // eslint-disable-next-line custom-rules/no-lookbehind-regex -- same as above
-  /(?<![A-Za-z0-9])([a-z0-9-]+@[a-z0-9-]+\.iam\.gserviceaccount\.com)(?![A-Za-z0-9])/g, '[REDACTED_GCP_SERVICE_ACCOUNT]');
+    // eslint-disable-next-line custom-rules/no-lookbehind-regex -- same as above
+    /(?<![A-Za-z0-9])([a-z0-9-]+@[a-z0-9-]+\.iam\.gserviceaccount\.com)(?![A-Za-z0-9])/g, '[REDACTED_GCP_SERVICE_ACCOUNT]');
 
   // Generic API keys in headers
   redacted = redacted.replace(/(["']?x-api-key["']?\s*[:=]\s*["']?)[^"',\s)}\]]+/gi, '$1[REDACTED_API_KEY]');
@@ -308,15 +308,15 @@ export function Feedback({
     }
   });
   return <Dialog title="Submit Feedback / Bug Report" onCancel={handleCancel} isCancelActive={step !== 'userInput'} inputGuide={exitState => exitState.pending ? <Text>Press {exitState.keyName} again to exit</Text> : step === 'userInput' ? <Byline>
-            <KeyboardShortcutHint shortcut="Enter" action="continue" />
-            <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" />
-          </Byline> : step === 'consent' ? <Byline>
-            <KeyboardShortcutHint shortcut="Enter" action="submit" />
-            <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" />
-          </Byline> : null}>
-      {step === 'userInput' && <Box flexDirection="column" gap={1}>
-          <Text>Describe the issue below:</Text>
-          <TextInput value={description} onChange={value => {
+    <KeyboardShortcutHint shortcut="Enter" action="continue" />
+    <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" />
+  </Byline> : step === 'consent' ? <Byline>
+    <KeyboardShortcutHint shortcut="Enter" action="submit" />
+    <ConfigurableShortcutHint action="confirm:no" context="Confirmation" fallback="Esc" description="cancel" />
+  </Byline> : null}>
+    {step === 'userInput' && <Box flexDirection="column" gap={1}>
+      <Text>Describe the issue below:</Text>
+      <TextInput value={description} onChange={value => {
         setDescription(value);
         // Clear error when user starts editing to allow retry
         if (error) {
@@ -325,70 +325,70 @@ export function Feedback({
       }} columns={textInputColumns} onSubmit={() => setStep('consent')} onExitMessage={() => onDone('Feedback cancelled', {
         display: 'system'
       })} cursorOffset={cursorOffset} onChangeCursorOffset={setCursorOffset} showCursor />
-          {error && <Box flexDirection="column" gap={1}>
-              <Text color="error">{error}</Text>
-              <Text dimColor>
-                Edit and press Enter to retry, or Esc to cancel
-              </Text>
-            </Box>}
-        </Box>}
+      {error && <Box flexDirection="column" gap={1}>
+        <Text color="error">{error}</Text>
+        <Text dimColor>
+          Edit and press Enter to retry, or Esc to cancel
+        </Text>
+      </Box>}
+    </Box>}
 
-      {step === 'consent' && <Box flexDirection="column">
-          <Text>This report will include:</Text>
-          <Box marginLeft={2} flexDirection="column">
-            <Text>
-              - Your feedback / bug description:{' '}
-              <Text dimColor>{description}</Text>
-            </Text>
-            <Text>
-              - Environment info:{' '}
-              <Text dimColor>
-                {env.platform}, {env.terminal}, v{MACRO.VERSION}
-              </Text>
-            </Text>
-            {envInfo.gitState && <Text>
-                - Git repo metadata:{' '}
-                <Text dimColor>
-                  {envInfo.gitState.branchName}
-                  {envInfo.gitState.commitHash ? `, ${envInfo.gitState.commitHash.slice(0, 7)}` : ''}
-                  {envInfo.gitState.remoteUrl ? ` @ ${envInfo.gitState.remoteUrl}` : ''}
-                  {!envInfo.gitState.isHeadOnRemote && ', not synced'}
-                  {!envInfo.gitState.isClean && ', has local changes'}
-                </Text>
-              </Text>}
-            <Text>- Current session transcript</Text>
-          </Box>
-          <Box marginTop={1}>
-            <Text wrap="wrap" dimColor>
-              We will use your feedback to debug related issues or to improve{' '}
-              Claude Code&apos;s functionality (eg. to reduce the risk of bugs
-              occurring in the future).
-            </Text>
-          </Box>
-          <Box marginTop={1}>
-            <Text>
-              Press <Text bold>Enter</Text> to confirm and submit.
-            </Text>
-          </Box>
-        </Box>}
+    {step === 'consent' && <Box flexDirection="column">
+      <Text>This report will include:</Text>
+      <Box marginLeft={2} flexDirection="column">
+        <Text>
+          - Your feedback / bug description:{' '}
+          <Text dimColor>{description}</Text>
+        </Text>
+        <Text>
+          - Environment info:{' '}
+          <Text dimColor>
+            {env.platform}, {env.terminal}, v{MACRO.VERSION}
+          </Text>
+        </Text>
+        {envInfo.gitState && <Text>
+          - Git repo metadata:{' '}
+          <Text dimColor>
+            {envInfo.gitState.branchName}
+            {envInfo.gitState.commitHash ? `, ${envInfo.gitState.commitHash.slice(0, 7)}` : ''}
+            {envInfo.gitState.remoteUrl ? ` @ ${envInfo.gitState.remoteUrl}` : ''}
+            {!envInfo.gitState.isHeadOnRemote && ', not synced'}
+            {!envInfo.gitState.isClean && ', has local changes'}
+          </Text>
+        </Text>}
+        <Text>- Current session transcript</Text>
+      </Box>
+      <Box marginTop={1}>
+        <Text wrap="wrap" dimColor>
+          We will use your feedback to debug related issues or to improve{' '}
+          Code Forge&apos;s functionality (eg. to reduce the risk of bugs
+          occurring in the future).
+        </Text>
+      </Box>
+      <Box marginTop={1}>
+        <Text>
+          Press <Text bold>Enter</Text> to confirm and submit.
+        </Text>
+      </Box>
+    </Box>}
 
-      {step === 'submitting' && <Box flexDirection="row" gap={1}>
-          <Text>Submitting report…</Text>
-        </Box>}
+    {step === 'submitting' && <Box flexDirection="row" gap={1}>
+      <Text>Submitting report…</Text>
+    </Box>}
 
-      {step === 'done' && <Box flexDirection="column">
-          {error ? <Text color="error">{error}</Text> : <Text color="success">Thank you for your report!</Text>}
-          {feedbackId && <Text dimColor>Feedback ID: {feedbackId}</Text>}
-          <Box marginTop={1}>
-            <Text>Press </Text>
-            <Text bold>Enter </Text>
-            <Text>
-              to open your browser and draft a GitHub issue, or any other key to
-              close.
-            </Text>
-          </Box>
-        </Box>}
-    </Dialog>;
+    {step === 'done' && <Box flexDirection="column">
+      {error ? <Text color="error">{error}</Text> : <Text color="success">Thank you for your report!</Text>}
+      {feedbackId && <Text dimColor>Feedback ID: {feedbackId}</Text>}
+      <Box marginTop={1}>
+        <Text>Press </Text>
+        <Text bold>Enter </Text>
+        <Text>
+          to open your browser and draft a GitHub issue, or any other key to
+          close.
+        </Text>
+      </Box>
+    </Box>}
+  </Dialog>;
 }
 export function createGitHubIssueUrl(feedbackId: string, title: string, description: string, errors: Array<{
   error?: string;
@@ -447,7 +447,7 @@ export function createGitHubIssueUrl(feedbackId: string, title: string, descript
 async function generateTitle(description: string, abortSignal: AbortSignal): Promise<string> {
   try {
     const response = await queryHaiku({
-      systemPrompt: asSystemPrompt(['Generate a concise, technical issue title (max 80 chars) for a public GitHub issue based on this bug report for Claude Code.', 'Claude Code is an agentic coding CLI based on the Anthropic API.', 'The title should:', '- Include the type of issue [Bug] or [Feature Request] as the first thing in the title', '- Be concise, specific and descriptive of the actual problem', '- Use technical terminology appropriate for a software issue', '- For error messages, extract the key error (e.g., "Missing Tool Result Block" rather than the full message)', '- Be direct and clear for developers to understand the problem', '- If you cannot determine a clear issue, use "Bug Report: [brief description]"', '- Any LLM API errors are from the Anthropic API, not from any other model provider', 'Your response will be directly used as the title of the Github issue, and as such should not contain any other commentary or explaination', 'Examples of good titles include: "[Bug] Auto-Compact triggers to soon", "[Bug] Anthropic API Error: Missing Tool Result Block", "[Bug] Error: Invalid Model Name for Opus"']),
+      systemPrompt: asSystemPrompt(['Generate a concise, technical issue title (max 80 chars) for a public GitHub issue based on this bug report forCode Forge.', 'Claude Code is an agentic coding CLI based on the Anthropic API.', 'The title should:', '- Include the type of issue [Bug] or [Feature Request] as the first thing in the title', '- Be concise, specific and descriptive of the actual problem', '- Use technical terminology appropriate for a software issue', '- For error messages, extract the key error (e.g., "Missing Tool Result Block" rather than the full message)', '- Be direct and clear for developers to understand the problem', '- If you cannot determine a clear issue, use "Bug Report: [brief description]"', '- Any LLM API errors are from the Anthropic API, not from any other model provider', 'Your response will be directly used as the title of the Github issue, and as such should not contain any other commentary or explaination', 'Examples of good titles include: "[Bug] Auto-Compact triggers to soon", "[Bug] Anthropic API Error: Missing Tool Result Block", "[Bug] Error: Invalid Model Name for Opus"']),
       userPrompt: description,
       signal: abortSignal,
       options: {

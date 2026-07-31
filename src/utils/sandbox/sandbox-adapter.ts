@@ -81,9 +81,9 @@ function permissionRuleExtractPrefix(permissionRule: string): string | null {
 }
 
 /**
- * Resolve Claude Code-specific path patterns for sandbox-runtime.
+ * ResolveCode Forge-specific path patterns for sandbox-runtime.
  *
- * Claude Code uses special path prefixes in permission rules:
+ *Code Forge uses special path prefixes in permission rules:
  * - `//path` → absolute from filesystem root (becomes `/path`)
  * - `/path` → relative to settings file directory (becomes `$SETTINGS_DIR/path`)
  * - `~/path` → passed through (sandbox-runtime handles this)
@@ -164,7 +164,7 @@ function shouldAllowManagedReadPathsOnly(): boolean {
 }
 
 /**
- * Convert Claude Code settings format to SandboxRuntimeConfig format
+ * ConvertCode Forge settings format to SandboxRuntimeConfig format
  * (Function exported for testing)
  *
  * @param settings Merged settings (used for sandbox config like network, ripgrep, etc.)
@@ -228,7 +228,7 @@ export function convertToSandboxRuntimeConfig(
   const allowRead: string[] = []
 
   // Always deny writes to settings.json files to prevent sandbox escape
-  // This blocks settings in the original working directory (where Claude Code started)
+  // This blocks settings in the original working directory (whereCode Forge started)
   const settingsPaths = SETTING_SOURCES.map(source =>
     getSettingsFilePathForSource(source),
   ).filter((p): p is string => p !== undefined)
@@ -744,14 +744,14 @@ async function initialize(
   // This ensures all code paths (REPL, print/SDK) are covered.
   const wrappedCallback: SandboxAskCallback | undefined = sandboxAskCallback
     ? async (hostPattern: NetworkHostPattern) => {
-        if (shouldAllowManagedSandboxDomainsOnly()) {
-          logForDebugging(
-            `[sandbox] Blocked network request to ${hostPattern.host} (allowManagedDomainsOnly)`,
-          )
-          return false
-        }
-        return sandboxAskCallback(hostPattern)
+      if (shouldAllowManagedSandboxDomainsOnly()) {
+        logForDebugging(
+          `[sandbox] Blocked network request to ${hostPattern.host} (allowManagedDomainsOnly)`,
+        )
+        return false
       }
+      return sandboxAskCallback(hostPattern)
+    }
     : undefined
 
   // Create the initialization promise synchronously (before any await) to prevent

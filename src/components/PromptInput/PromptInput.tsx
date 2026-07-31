@@ -320,8 +320,8 @@ function PromptInput({
   // REPL.tsx) — teammate view falls back to SpinnerWithVerbInner which has
   // its own marginTop, so the gap stays even without ours.
   const briefOwnsGap = feature('KAIROS') || feature('KAIROS_BRIEF') ?
-  // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
-  useAppState(s => s.isBriefOnly) && !viewingAgentTaskId : false;
+    // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
+    useAppState(s => s.isBriefOnly) && !viewingAgentTaskId : false;
   const mainLoopModel_ = useAppState(s => s.mainLoopModel);
   const mainLoopModelForSession = useAppState(s => s.mainLoopModelForSession);
   const thinkingEnabled = useAppState(s => s.thinkingEnabled);
@@ -534,8 +534,8 @@ function PromptInput({
   const tokenBudgetTriggers = useMemo(() => feature('TOKEN_BUDGET') ? findTokenBudgetPositions(displayedValue) : [], [displayedValue]);
   const knownChannelsVersion = useSyncExternalStore(subscribeKnownChannels, getKnownChannelsVersion);
   const slackChannelTriggers = useMemo(() => hasSlackMcpServer(store.getState().mcp.clients) ? findSlackChannelPositions(displayedValue) : [],
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- store is a stable ref
-  [displayedValue, knownChannelsVersion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- store is a stable ref
+    [displayedValue, knownChannelsVersion]);
 
   // Find @name mentions and highlight with team member's color
   const memberMentionHighlights = useMemo((): Array<{
@@ -761,7 +761,7 @@ function PromptInput({
     if (feature('ULTRAPLAN') && ultraplanTriggers.length) {
       addNotification({
         key: 'ultraplan-active',
-        text: 'This prompt will launch an ultraplan session in Claude Code on the web',
+        text: 'This prompt will launch an ultraplan session inCode Forge on the web',
         priority: 'immediate',
         timeoutMs: 5000
       });
@@ -818,9 +818,9 @@ function PromptInput({
         addNotification({
           key: 'stash-hint',
           jsx: <Text dimColor>
-              Tip:{' '}
-              <ConfigurableShortcutHint action="chat:stash" context="Chat" fallback="ctrl+s" description="stash" />
-            </Text>,
+            Tip:{' '}
+            <ConfigurableShortcutHint action="chat:stash" context="Chat" fallback="ctrl+s" description="stash" />
+          </Text>,
           priority: 'immediate',
           timeoutMs: FOOTER_TEMPORARY_STATUS_TIMEOUT
         });
@@ -1251,7 +1251,7 @@ function PromptInput({
     trackAndSetInput(newInput);
     setCursorOffset(cursorOffset + text.length);
   }
-  const doublePressEscFromEmpty = useDoublePress(() => {}, () => onShowMessageSelector());
+  const doublePressEscFromEmpty = useDoublePress(() => { }, () => onShowMessageSelector());
 
   // Function to get the queued command for editing. Returns true if commands were popped.
   const popAllCommandsFromQueue = useCallback((): boolean => {
@@ -1875,9 +1875,9 @@ function PromptInput({
       const shortcut = MACOS_OPTION_SPECIAL_CHARS[char];
       const terminalName = getNativeCSIuTerminalDisplayName();
       const jsx = terminalName ? <Text dimColor>
-          To enable {shortcut}, set <Text bold>Option as Meta</Text> in{' '}
-          {terminalName} preferences (⌘,)
-        </Text> : <Text dimColor>To enable {shortcut}, run /terminal-setup</Text>;
+        To enable {shortcut}, set <Text bold>Option as Meta</Text> in{' '}
+        {terminalName} preferences (⌘,)
+      </Text> : <Text dimColor>To enable {shortcut}, run /terminal-setup</Text>;
       addNotification({
         key: 'option-meta-hint',
         jsx,
@@ -1982,8 +1982,8 @@ function PromptInput({
   }, [effortNotificationText, addNotification, removeNotification]);
   useBuddyNotification();
   const companionSpeaking = feature('BUDDY') ?
-  // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
-  useAppState(s => s.companionReaction !== undefined) : false;
+    // biome-ignore lint/correctness/useHookAtTopLevel: feature() is a compile-time constant
+    useAppState(s => s.companionReaction !== undefined) : false;
   const {
     columns,
     rows
@@ -2061,8 +2061,8 @@ function PromptInput({
   const modelPickerElement = useMemo(() => {
     if (!showModelPicker) return null;
     return <Box flexDirection="column" marginTop={1}>
-        <ModelPicker initial={mainLoopModel_} sessionModel={mainLoopModelForSession} onSelect={handleModelSelect} onCancel={handleModelCancel} isStandaloneCommand showFastModeNotice={isFastModeEnabled() && isFastMode && isFastModeSupportedByModel(mainLoopModel_) && isFastModeAvailable()} />
-      </Box>;
+      <ModelPicker initial={mainLoopModel_} sessionModel={mainLoopModelForSession} onSelect={handleModelSelect} onCancel={handleModelCancel} isStandaloneCommand showFastModeNotice={isFastModeEnabled() && isFastMode && isFastModeSupportedByModel(mainLoopModel_) && isFastModeAvailable()} />
+    </Box>;
   }, [showModelPicker, mainLoopModel_, mainLoopModelForSession, handleModelSelect, handleModelCancel]);
   const handleFastModeSelect = useCallback((result?: string) => {
     setShowFastModePicker(false);
@@ -2080,8 +2080,8 @@ function PromptInput({
   const fastModePickerElement = useMemo(() => {
     if (!showFastModePicker) return null;
     return <Box flexDirection="column" marginTop={1}>
-        <FastModePicker onDone={handleFastModeSelect} unavailableReason={getFastModeUnavailableReason()} />
-      </Box>;
+      <FastModePicker onDone={handleFastModeSelect} unavailableReason={getFastModeUnavailableReason()} />
+    </Box>;
   }, [showFastModePicker, handleFastModeSelect]);
 
   // Memoized callbacks for thinking toggle
@@ -2097,8 +2097,8 @@ function PromptInput({
     addNotification({
       key: 'thinking-toggled-hotkey',
       jsx: <Text color={enabled ? 'suggestion' : undefined} dimColor={!enabled}>
-            Thinking {enabled ? 'on' : 'off'}
-          </Text>,
+        Thinking {enabled ? 'on' : 'off'}
+      </Text>,
       priority: 'immediate',
       timeoutMs: 3000
     });
@@ -2111,8 +2111,8 @@ function PromptInput({
   const thinkingToggleElement = useMemo(() => {
     if (!showThinkingToggle) return null;
     return <Box flexDirection="column" marginTop={1}>
-        <ThinkingToggle currentValue={thinkingEnabled ?? true} onSelect={handleThinkingSelect} onCancel={handleThinkingCancel} isMidConversation={messages.some(m => m.type === 'assistant')} />
-      </Box>;
+      <ThinkingToggle currentValue={thinkingEnabled ?? true} onSelect={handleThinkingSelect} onCancel={handleThinkingCancel} isMidConversation={messages.some(m => m.type === 'assistant')} />
+    </Box>;
   }, [showThinkingToggle, thinkingEnabled, handleThinkingSelect, handleThinkingCancel, messages.length]);
 
   // Portal dialog to DialogOverlay in fullscreen so it escapes the bottom
@@ -2235,65 +2235,65 @@ function PromptInput({
   };
   if (isExternalEditorActive) {
     return <Box flexDirection="row" alignItems="center" justifyContent="center" borderColor={getBorderColor()} borderStyle="round" borderLeft={false} borderRight={false} borderBottom width="100%">
-        <Text dimColor italic>
-          Save and close editor to continue...
-        </Text>
-      </Box>;
+      <Text dimColor italic>
+        Save and close editor to continue...
+      </Text>
+    </Box>;
   }
   const textInputElement = isVimModeEnabled() ? <VimTextInput {...baseProps} initialMode={vimMode} onModeChange={setVimMode} /> : <TextInput {...baseProps} />;
   return <Box flexDirection="column" marginTop={briefOwnsGap ? 0 : 1}>
-      {!isFullscreenEnvEnabled() && <PromptInputQueuedCommands />}
-      {hasSuppressedDialogs && <Box marginTop={1} marginLeft={2}>
-          <Text dimColor>Waiting for permission…</Text>
-        </Box>}
-      <PromptInputStashNotice hasStash={stashedPrompt !== undefined} />
-      {swarmBanner ? <>
-          <Text color={swarmBanner.bgColor}>
-            {swarmBanner.text ? <>
-                {'─'.repeat(Math.max(0, columns - stringWidth(swarmBanner.text) - 4))}
-                <Text backgroundColor={swarmBanner.bgColor} color="inverseText">
-                  {' '}
-                  {swarmBanner.text}{' '}
-                </Text>
-                {'──'}
-              </> : '─'.repeat(columns)}
+    {!isFullscreenEnvEnabled() && <PromptInputQueuedCommands />}
+    {hasSuppressedDialogs && <Box marginTop={1} marginLeft={2}>
+      <Text dimColor>Waiting for permission…</Text>
+    </Box>}
+    <PromptInputStashNotice hasStash={stashedPrompt !== undefined} />
+    {swarmBanner ? <>
+      <Text color={swarmBanner.bgColor}>
+        {swarmBanner.text ? <>
+          {'─'.repeat(Math.max(0, columns - stringWidth(swarmBanner.text) - 4))}
+          <Text backgroundColor={swarmBanner.bgColor} color="inverseText">
+            {' '}
+            {swarmBanner.text}{' '}
           </Text>
-          <Box flexDirection="row" width="100%">
-            <PromptInputModeIndicator mode={mode} isLoading={isLoading} viewingAgentName={viewingAgentName} viewingAgentColor={viewingAgentColor} />
-            <Box flexGrow={1} flexShrink={1} onClick={handleInputClick}>
-              {textInputElement}
-            </Box>
-          </Box>
-          <Text color={swarmBanner.bgColor}>{'─'.repeat(columns)}</Text>
-        </> : <Box flexDirection="row" alignItems="flex-start" justifyContent="flex-start" borderColor={getBorderColor()} borderStyle="round" borderLeft={false} borderRight={false} borderBottom width="100%" borderText={buildBorderText(showFastIcon ?? false, showFastIconHint, fastModeCooldown)}>
-          <PromptInputModeIndicator mode={mode} isLoading={isLoading} viewingAgentName={viewingAgentName} viewingAgentColor={viewingAgentColor} />
-          <Box flexGrow={1} flexShrink={1} onClick={handleInputClick}>
-            {textInputElement}
-          </Box>
-        </Box>}
-      <PromptInputFooter apiKeyStatus={apiKeyStatus} debug={debug} exitMessage={exitMessage} vimMode={isVimModeEnabled() ? vimMode : undefined} mode={mode} autoUpdaterResult={autoUpdaterResult} isAutoUpdating={isAutoUpdating} verbose={verbose} onAutoUpdaterResult={onAutoUpdaterResult} onChangeIsUpdating={setIsAutoUpdating} suggestions={suggestions} selectedSuggestion={selectedSuggestion} maxColumnWidth={maxColumnWidth} toolPermissionContext={effectiveToolPermissionContext} helpOpen={helpOpen} suppressHint={input.length > 0} isLoading={isLoading} tasksSelected={tasksSelected} teamsSelected={teamsSelected} bridgeSelected={bridgeSelected} tmuxSelected={tmuxSelected} teammateFooterIndex={teammateFooterIndex} ideSelection={ideSelection} mcpClients={mcpClients} isPasting={isPasting} isInputWrapped={isInputWrapped} messages={messages} isSearching={isSearchingHistory} historyQuery={historyQuery} setHistoryQuery={setHistoryQuery} historyFailedMatch={historyFailedMatch} onOpenTasksDialog={isFullscreenEnvEnabled() ? handleOpenTasksDialog : undefined} />
-      {isFullscreenEnvEnabled() ? null : autoModeOptInDialog}
-      {isFullscreenEnvEnabled() ?
-    // position=absolute takes zero layout height so the spinner
-    // doesn't shift when a notification appears/disappears. Yoga
-    // anchors absolute children at the parent's content-box origin;
-    // marginTop=-1 pulls it into the marginTop=1 gap row above the
-    // prompt border. In brief mode there is no such gap (briefOwnsGap
-    // strips our marginTop) and BriefSpinner sits flush against the
-    // border — marginTop=-2 skips over the spinner content into
-    // BriefSpinner's own marginTop=1 blank row. height=1 +
-    // overflow=hidden clips multi-line notifications to a single row.
-    // flex-end anchors the bottom line so the visible row is always
-    // the most recent. Suppressed while the slash overlay or
-    // auto-mode opt-in dialog is up by height=0 (NOT unmount) — this
-    // Box renders later in tree order so it would paint over their
-    // bottom row. Keeping Notifications mounted prevents AutoUpdater's
-    // initial-check effect from re-firing on every slash-completion
-    // toggle (PR#22413).
-    <Box position="absolute" marginTop={briefOwnsGap ? -2 : -1} height={suggestions.length === 0 && !showAutoModeOptIn ? 1 : 0} width="100%" paddingLeft={2} paddingRight={1} flexDirection="column" justifyContent="flex-end" overflow="hidden">
-          <Notifications apiKeyStatus={apiKeyStatus} autoUpdaterResult={autoUpdaterResult} debug={debug} isAutoUpdating={isAutoUpdating} verbose={verbose} messages={messages} onAutoUpdaterResult={onAutoUpdaterResult} onChangeIsUpdating={setIsAutoUpdating} ideSelection={ideSelection} mcpClients={mcpClients} isInputWrapped={isInputWrapped} />
-        </Box> : null}
-    </Box>;
+          {'──'}
+        </> : '─'.repeat(columns)}
+      </Text>
+      <Box flexDirection="row" width="100%">
+        <PromptInputModeIndicator mode={mode} isLoading={isLoading} viewingAgentName={viewingAgentName} viewingAgentColor={viewingAgentColor} />
+        <Box flexGrow={1} flexShrink={1} onClick={handleInputClick}>
+          {textInputElement}
+        </Box>
+      </Box>
+      <Text color={swarmBanner.bgColor}>{'─'.repeat(columns)}</Text>
+    </> : <Box flexDirection="row" alignItems="flex-start" justifyContent="flex-start" borderColor={getBorderColor()} borderStyle="round" borderLeft={false} borderRight={false} borderBottom width="100%" borderText={buildBorderText(showFastIcon ?? false, showFastIconHint, fastModeCooldown)}>
+      <PromptInputModeIndicator mode={mode} isLoading={isLoading} viewingAgentName={viewingAgentName} viewingAgentColor={viewingAgentColor} />
+      <Box flexGrow={1} flexShrink={1} onClick={handleInputClick}>
+        {textInputElement}
+      </Box>
+    </Box>}
+    <PromptInputFooter apiKeyStatus={apiKeyStatus} debug={debug} exitMessage={exitMessage} vimMode={isVimModeEnabled() ? vimMode : undefined} mode={mode} autoUpdaterResult={autoUpdaterResult} isAutoUpdating={isAutoUpdating} verbose={verbose} onAutoUpdaterResult={onAutoUpdaterResult} onChangeIsUpdating={setIsAutoUpdating} suggestions={suggestions} selectedSuggestion={selectedSuggestion} maxColumnWidth={maxColumnWidth} toolPermissionContext={effectiveToolPermissionContext} helpOpen={helpOpen} suppressHint={input.length > 0} isLoading={isLoading} tasksSelected={tasksSelected} teamsSelected={teamsSelected} bridgeSelected={bridgeSelected} tmuxSelected={tmuxSelected} teammateFooterIndex={teammateFooterIndex} ideSelection={ideSelection} mcpClients={mcpClients} isPasting={isPasting} isInputWrapped={isInputWrapped} messages={messages} isSearching={isSearchingHistory} historyQuery={historyQuery} setHistoryQuery={setHistoryQuery} historyFailedMatch={historyFailedMatch} onOpenTasksDialog={isFullscreenEnvEnabled() ? handleOpenTasksDialog : undefined} />
+    {isFullscreenEnvEnabled() ? null : autoModeOptInDialog}
+    {isFullscreenEnvEnabled() ?
+      // position=absolute takes zero layout height so the spinner
+      // doesn't shift when a notification appears/disappears. Yoga
+      // anchors absolute children at the parent's content-box origin;
+      // marginTop=-1 pulls it into the marginTop=1 gap row above the
+      // prompt border. In brief mode there is no such gap (briefOwnsGap
+      // strips our marginTop) and BriefSpinner sits flush against the
+      // border — marginTop=-2 skips over the spinner content into
+      // BriefSpinner's own marginTop=1 blank row. height=1 +
+      // overflow=hidden clips multi-line notifications to a single row.
+      // flex-end anchors the bottom line so the visible row is always
+      // the most recent. Suppressed while the slash overlay or
+      // auto-mode opt-in dialog is up by height=0 (NOT unmount) — this
+      // Box renders later in tree order so it would paint over their
+      // bottom row. Keeping Notifications mounted prevents AutoUpdater's
+      // initial-check effect from re-firing on every slash-completion
+      // toggle (PR#22413).
+      <Box position="absolute" marginTop={briefOwnsGap ? -2 : -1} height={suggestions.length === 0 && !showAutoModeOptIn ? 1 : 0} width="100%" paddingLeft={2} paddingRight={1} flexDirection="column" justifyContent="flex-end" overflow="hidden">
+        <Notifications apiKeyStatus={apiKeyStatus} autoUpdaterResult={autoUpdaterResult} debug={debug} isAutoUpdating={isAutoUpdating} verbose={verbose} messages={messages} onAutoUpdaterResult={onAutoUpdaterResult} onChangeIsUpdating={setIsAutoUpdating} ideSelection={ideSelection} mcpClients={mcpClients} isInputWrapped={isInputWrapped} />
+      </Box> : null}
+  </Box>;
 }
 
 /**

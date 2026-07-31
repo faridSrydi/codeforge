@@ -272,7 +272,8 @@ export async function* withRetry<T>(
       ) {
         // If the 429 is specifically because extra usage (overage) is not
         // available, permanently disable fast mode with a specific message.
-        const overageReason = error.headers?.get(
+        const overageReason = getHeader(
+          error.headers,
           'anthropic-ratelimit-unified-overage-disabled-reason',
         )
         if (overageReason !== null && overageReason !== undefined) {
@@ -327,7 +328,7 @@ export async function* withRetry<T>(
       if (
         is529Error(error) &&
         // If FALLBACK_FOR_ALL_PRIMARY_MODELS is not set, fall through only if the primary model is a non-custom Opus model.
-        // TODO: Revisit if the isNonCustomOpusModel check should still exist, or if isNonCustomOpusModel is a stale artifact of when Claude Code was hardcoded on Opus.
+        // TODO: Revisit if the isNonCustomOpusModel check should still exist, or if isNonCustomOpusModel is a stale artifact of whenCode Forge was hardcoded on Opus.
         (process.env.FALLBACK_FOR_ALL_PRIMARY_MODELS ||
           (!isClaudeAISubscriber() && isNonCustomOpusModel(options.model)))
       ) {
@@ -549,10 +550,10 @@ export function getRetryDelay(
 
 export function parseMaxTokensContextOverflowError(error: APIError):
   | {
-      inputTokens: number
-      maxTokens: number
-      contextLimit: number
-    }
+    inputTokens: number
+    maxTokens: number
+    contextLimit: number
+  }
   | undefined {
   if (error.status !== 400 || !error.message) {
     return undefined
@@ -728,8 +729,19 @@ function shouldRetry(error: APIError): boolean {
     return true
   }
 
+  function getHeader(headers: any, name: string): string | null | undefined {
+    if (!headers) return undefined
+    if (typeof headers.get === 'function') {
+      return headers.get(name)
+    }
+    if (typeof headers === 'object') {
+      return headers[name] ?? headers[name.toLowerCase()]
+    }
+    return undefined
+  }
+
   // Note this is not a standard header.
-  const shouldRetryHeader = error.headers?.get('x-should-retry')
+  const shouldRetryHeader = getHeader(error.headers, 'x-should-retry')
 
   // If the server explicitly says whether or not to retry, obey.
   // For Max and Pro users, should-retry is true, but in several hours, so we shouldn't.

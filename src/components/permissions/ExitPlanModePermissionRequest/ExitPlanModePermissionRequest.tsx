@@ -89,31 +89,31 @@ export function autoNameSessionFromPlan(plan: string, setAppState: (updater: (pr
   // Checking it would make the feature self-defeating after first use.
   if (!isClearContext && getCurrentSessionTitle(getSessionId())) return;
   void generateSessionName(
-  // generateSessionName tail-slices to the last 1000 chars (correct for
-  // conversations, where recency matters). Plans front-load the goal and
-  // end with testing steps — head-slice so Haiku sees the summary.
-  [createUserMessage({
-    content: plan.slice(0, 1000)
-  })], new AbortController().signal).then(async name => {
-    // On clear-context acceptance, regenerateSessionId() has run by now —
-    // this intentionally names the NEW execution session. Do not "fix" by
-    // capturing sessionId once; that would name the abandoned planning session.
-    if (!name || getCurrentSessionTitle(getSessionId())) return;
-    const sessionId = getSessionId() as UUID;
-    const fullPath = getTranscriptPath();
-    await saveCustomTitle(sessionId, name, fullPath, 'auto');
-    await saveAgentName(sessionId, name, fullPath, 'auto');
-    setAppState(prev => {
-      if (prev.standaloneAgentContext?.name === name) return prev;
-      return {
-        ...prev,
-        standaloneAgentContext: {
-          ...prev.standaloneAgentContext,
-          name
-        }
-      };
-    });
-  }).catch(logError);
+    // generateSessionName tail-slices to the last 1000 chars (correct for
+    // conversations, where recency matters). Plans front-load the goal and
+    // end with testing steps — head-slice so Haiku sees the summary.
+    [createUserMessage({
+      content: plan.slice(0, 1000)
+    })], new AbortController().signal).then(async name => {
+      // On clear-context acceptance, regenerateSessionId() has run by now —
+      // this intentionally names the NEW execution session. Do not "fix" by
+      // capturing sessionId once; that would name the abandoned planning session.
+      if (!name || getCurrentSessionTitle(getSessionId())) return;
+      const sessionId = getSessionId() as UUID;
+      const fullPath = getTranscriptPath();
+      await saveCustomTitle(sessionId, name, fullPath, 'auto');
+      await saveAgentName(sessionId, name, fullPath, 'auto');
+      setAppState(prev => {
+        if (prev.standaloneAgentContext?.name === name) return prev;
+        return {
+          ...prev,
+          standaloneAgentContext: {
+            ...prev.standaloneAgentContext,
+            name
+          }
+        };
+      });
+    }).catch(logError);
 }
 export function ExitPlanModePermissionRequest({
   toolUseConfirm,
@@ -533,22 +533,22 @@ export function ExitPlanModePermissionRequest({
   useLayoutEffect(() => {
     if (!useStickyFooter) return;
     setStickyFooter(<Box flexDirection="column" borderStyle="round" borderColor="planMode" borderLeft={false} borderRight={false} borderBottom={false} paddingX={1}>
-        <Text dimColor>Would you like to proceed?</Text>
-        <Box marginTop={1}>
-          <Select options={options} onChange={v => void handleResponseRef.current(v)} onCancel={() => handleCancelRef.current?.()} onImagePaste={onImagePaste} pastedContents={pastedContents} onRemoveImage={onRemoveImage} />
-        </Box>
-        {editorName && <Box flexDirection="row" gap={1} marginTop={1}>
-            <Text dimColor>ctrl-g to edit in </Text>
-            <Text bold dimColor>
-              {editorName}
-            </Text>
-            {isV2 && planFilePath && <Text dimColor> · {getDisplayPath(planFilePath)}</Text>}
-            {showSaveMessage && <>
-                <Text dimColor>{' · '}</Text>
-                <Text color="success">{figures.tick}Plan saved!</Text>
-              </>}
-          </Box>}
-      </Box>);
+      <Text dimColor>Would you like to proceed?</Text>
+      <Box marginTop={1}>
+        <Select options={options} onChange={v => void handleResponseRef.current(v)} onCancel={() => handleCancelRef.current?.()} onImagePaste={onImagePaste} pastedContents={pastedContents} onRemoveImage={onRemoveImage} />
+      </Box>
+      {editorName && <Box flexDirection="row" gap={1} marginTop={1}>
+        <Text dimColor>ctrl-g to edit in </Text>
+        <Text bold dimColor>
+          {editorName}
+        </Text>
+        {isV2 && planFilePath && <Text dimColor> · {getDisplayPath(planFilePath)}</Text>}
+        {showSaveMessage && <>
+          <Text dimColor>{' · '}</Text>
+          <Text color="success">{figures.tick}Plan saved!</Text>
+        </>}
+      </Box>}
+    </Box>);
     return () => setStickyFooter(null);
     // onImagePaste/onRemoveImage are stable (useCallback/useRef-backed above)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -599,10 +599,10 @@ export function ExitPlanModePermissionRequest({
       }
     }
     return <PermissionDialog color="planMode" title="Exit plan mode?" workerBadge={workerBadge}>
-        <Box flexDirection="column" paddingX={1} marginTop={1}>
-          <Text>Claude wants to exit plan mode</Text>
-          <Box marginTop={1}>
-            <Select options={[{
+      <Box flexDirection="column" paddingX={1} marginTop={1}>
+        <Text>Claude wants to exit plan mode</Text>
+        <Box marginTop={1}>
+          <Select options={[{
             label: 'Yes',
             value: 'yes' as const
           }, {
@@ -619,55 +619,55 @@ export function ExitPlanModePermissionRequest({
             onReject();
             toolUseConfirm.onReject();
           }} />
-          </Box>
         </Box>
-      </PermissionDialog>;
+      </Box>
+    </PermissionDialog>;
   }
   return <Box flexDirection="column" tabIndex={0} autoFocus onKeyDown={handleKeyDown}>
-      <PermissionDialog color="planMode" title="Ready to code?" innerPaddingX={0} workerBadge={workerBadge}>
-        <Box flexDirection="column" marginTop={1}>
-          <Box paddingX={1} flexDirection="column">
-            <Text>Here is Claude&apos;s plan:</Text>
-          </Box>
-          <Box borderColor="subtle" borderStyle="dashed" flexDirection="column" borderLeft={false} borderRight={false} paddingX={1} marginBottom={1}
-        // Necessary for Windows Terminal to render properly
-        overflow="hidden">
-            <Markdown>{currentPlan}</Markdown>
-          </Box>
-          <Box flexDirection="column" paddingX={1}>
-            <PermissionRuleExplanation permissionResult={toolUseConfirm.permissionResult} toolType="tool" />
-            {isClassifierPermissionsEnabled() && allowedPrompts && allowedPrompts.length > 0 && <Box flexDirection="column" marginBottom={1}>
-                  <Text bold>Requested permissions:</Text>
-                  {allowedPrompts.map((p, i) => <Text key={i} dimColor>
-                      {'  '}· {p.tool}({PROMPT_PREFIX} {p.prompt})
-                    </Text>)}
-                </Box>}
-            {!useStickyFooter && <>
-                <Text dimColor>
-                  Claude has written up a plan and is ready to execute. Would
-                  you like to proceed?
-                </Text>
-                <Box marginTop={1}>
-                  <Select options={options} onChange={handleResponse} onCancel={() => handleCancelRef.current?.()} onImagePaste={onImagePaste} pastedContents={pastedContents} onRemoveImage={onRemoveImage} />
-                </Box>
-              </>}
-          </Box>
+    <PermissionDialog color="planMode" title="Ready to code?" innerPaddingX={0} workerBadge={workerBadge}>
+      <Box flexDirection="column" marginTop={1}>
+        <Box paddingX={1} flexDirection="column">
+          <Text>Here is Claude&apos;s plan:</Text>
         </Box>
-      </PermissionDialog>
-      {!useStickyFooter && editorName && <Box flexDirection="row" gap={1} paddingX={1} marginTop={1}>
-          <Box>
-            <Text dimColor>ctrl-g to edit in </Text>
-            <Text bold dimColor>
-              {editorName}
+        <Box borderColor="subtle" borderStyle="dashed" flexDirection="column" borderLeft={false} borderRight={false} paddingX={1} marginBottom={1}
+          // Necessary for Windows Terminal to render properly
+          overflow="hidden">
+          <Markdown>{currentPlan}</Markdown>
+        </Box>
+        <Box flexDirection="column" paddingX={1}>
+          <PermissionRuleExplanation permissionResult={toolUseConfirm.permissionResult} toolType="tool" />
+          {isClassifierPermissionsEnabled() && allowedPrompts && allowedPrompts.length > 0 && <Box flexDirection="column" marginBottom={1}>
+            <Text bold>Requested permissions:</Text>
+            {allowedPrompts.map((p, i) => <Text key={i} dimColor>
+              {'  '}· {p.tool}({PROMPT_PREFIX} {p.prompt})
+            </Text>)}
+          </Box>}
+          {!useStickyFooter && <>
+            <Text dimColor>
+              Claude has written up a plan and is ready to execute. Would
+              you like to proceed?
             </Text>
-            {isV2 && planFilePath && <Text dimColor> · {getDisplayPath(planFilePath)}</Text>}
-          </Box>
-          {showSaveMessage && <Box>
-              <Text dimColor>{' · '}</Text>
-              <Text color="success">{figures.tick}Plan saved!</Text>
-            </Box>}
-        </Box>}
-    </Box>;
+            <Box marginTop={1}>
+              <Select options={options} onChange={handleResponse} onCancel={() => handleCancelRef.current?.()} onImagePaste={onImagePaste} pastedContents={pastedContents} onRemoveImage={onRemoveImage} />
+            </Box>
+          </>}
+        </Box>
+      </Box>
+    </PermissionDialog>
+    {!useStickyFooter && editorName && <Box flexDirection="row" gap={1} paddingX={1} marginTop={1}>
+      <Box>
+        <Text dimColor>ctrl-g to edit in </Text>
+        <Text bold dimColor>
+          {editorName}
+        </Text>
+        {isV2 && planFilePath && <Text dimColor> · {getDisplayPath(planFilePath)}</Text>}
+      </Box>
+      {showSaveMessage && <Box>
+        <Text dimColor>{' · '}</Text>
+        <Text color="success">{figures.tick}Plan saved!</Text>
+      </Box>}
+    </Box>}
+  </Box>;
 }
 
 /** @internal Exported for testing. */
@@ -730,7 +730,7 @@ export function buildPlanApprovalOptions({
   });
   if (showUltraplan) {
     options.push({
-      label: 'No, refine with Ultraplan on Claude Code on the web',
+      label: 'No, refine with Ultraplan onCode Forge on the web',
       value: 'ultraplan'
     });
   }

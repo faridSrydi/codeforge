@@ -1,7 +1,7 @@
 /**
  * Plugin Loader Module
  *
- * This module is responsible for discovering, loading, and validating Claude Code plugins
+ * This module is responsible for discovering, loading, and validatingCode Forge plugins
  * from various sources including marketplaces and git repositories.
  *
  * NPM packages are also supported but must be referenced through marketplaces - the marketplace
@@ -725,7 +725,7 @@ export async function installFromGitSubdir(
   if (!(await checkGitAvailable())) {
     throw new Error(
       'git-subdir plugin source requires git to be installed and on PATH. ' +
-        'Install git (version 2.25 or later for sparse-checkout cone mode) and try again.',
+      'Install git (version 2.25 or later for sparse-checkout cone mode) and try again.',
     )
   }
 
@@ -833,7 +833,7 @@ export async function installFromGitSubdir(
       if (isENOENT(e)) {
         throw new Error(
           `Subdirectory '${subdirPath}' not found in repository ${gitUrl}${ref ? ` (ref: ${ref})` : ''}. ` +
-            'Check that the path is correct and exists at the specified ref/sha.',
+          'Check that the path is correct and exists at the specified ref/sha.',
         )
       }
       throw e
@@ -1690,7 +1690,7 @@ export async function createPluginFromPath(
         if (loadedHookPaths.has(normalizedPath)) {
           logForDebugging(
             `Skipping duplicate hooks file for plugin ${manifest.name}: ${hookSpec} ` +
-              `(resolves to already-loaded file: ${normalizedPath})`,
+            `(resolves to already-loaded file: ${normalizedPath})`,
           )
           if (strict) {
             const errorMsg = `Duplicate hooks file detected: ${hookSpec} resolves to already-loaded file ${normalizedPath}. The standard hooks/hooks.json is loaded automatically, so manifest.hooks should only reference additional hook files.`
@@ -2051,21 +2051,21 @@ async function loadPluginsFromMarketplaces({
       const installEntry = installedPluginsData.plugins[pluginId]?.[0]
       return cacheOnly
         ? loadPluginFromMarketplaceEntryCacheOnly(
-            result.entry,
-            result.marketplaceInstallLocation,
-            pluginId,
-            enabledValue === true,
-            errors,
-            installEntry?.installPath,
-          )
+          result.entry,
+          result.marketplaceInstallLocation,
+          pluginId,
+          enabledValue === true,
+          errors,
+          installEntry?.installPath,
+        )
         : loadPluginFromMarketplaceEntry(
-            result.entry,
-            result.marketplaceInstallLocation,
-            pluginId,
-            enabledValue === true,
-            errors,
-            installEntry?.version,
-          )
+          result.entry,
+          result.marketplaceInstallLocation,
+          pluginId,
+          enabledValue === true,
+          errors,
+          installEntry?.version,
+        )
     }),
   )
 
@@ -2340,13 +2340,13 @@ async function loadPluginFromMarketplaceEntry(
             version !== 'unknown'
               ? version
               : await calculatePluginVersion(
-                  pluginId,
-                  entry.source,
-                  cached.manifest,
-                  cached.path,
-                  installedVersion ?? entry.version,
-                  cached.gitCommitSha,
-                )
+                pluginId,
+                entry.source,
+                cached.manifest,
+                cached.path,
+                installedVersion ?? entry.version,
+                cached.gitCommitSha,
+              )
 
           // Copy to versioned cache
           // For external sources, marketplaceDir is not applicable (already downloaded)
@@ -2395,7 +2395,7 @@ async function loadPluginFromMarketplaceEntry(
       logForDebugging(
         `Failed to extract plugin ZIP ${pluginPath}, deleting corrupt file: ${error}`,
       )
-      await rm(pluginPath, { force: true }).catch(() => {})
+      await rm(pluginPath, { force: true }).catch(() => { })
       throw error
     }
   }

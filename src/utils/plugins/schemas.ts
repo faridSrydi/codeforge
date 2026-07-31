@@ -323,7 +323,7 @@ const PluginManifestMetadataSchema = lazySchema(() =>
  * Schema for plugin hooks configuration (hooks.json)
  *
  * Defines the hooks that a plugin can provide to intercept and modify
- * Claude Code behavior at various lifecycle events.
+ *Code Forge behavior at various lifecycle events.
  */
 export const PluginHooksSchema = lazySchema(() =>
   z.object({
@@ -644,11 +644,11 @@ const PluginManifestUserConfigSchema = lazySchema(() =>
       .optional()
       .describe(
         'User-configurable values this plugin needs. Prompted at enable time. ' +
-          'Non-sensitive values saved to settings.json; sensitive values to secure storage ' +
-          '(macOS keychain or .credentials.json). Available as ${user_config.KEY} in ' +
-          'MCP/LSP server config, hook commands, and (non-sensitive only) skill/agent content. ' +
-          'Note: sensitive values share a single keychain entry with OAuth tokens — keep ' +
-          'secret counts small to stay under the ~2KB stdin-safe limit (see INC-3028).',
+        'Non-sensitive values saved to settings.json; sensitive values to secure storage ' +
+        '(macOS keychain or .credentials.json). Available as ${user_config.KEY} in ' +
+        'MCP/LSP server config, hook commands, and (non-sensitive only) skill/agent content. ' +
+        'Note: sensitive values share a single keychain entry with OAuth tokens — keep ' +
+        'secret counts small to stay under the ~2KB stdin-safe limit (see INC-3028).',
       ),
   }),
 )
@@ -690,14 +690,14 @@ const PluginManifestChannelsSchema = lazySchema(() =>
               .optional()
               .describe(
                 'Fields to prompt the user for when enabling this plugin in assistant mode. ' +
-                  'Saved values are substituted into ${user_config.KEY} references in the mcpServers env.',
+                'Saved values are substituted into ${user_config.KEY} references in the mcpServers env.',
               ),
           })
           .strict(),
       )
       .describe(
         'Channels this plugin provides. Each entry declares an MCP server as a message channel ' +
-          'and optionally specifies user configuration to prompt for at enable time.',
+        'and optionally specifies user configuration to prompt for at enable time.',
       ),
   }),
 )
@@ -861,7 +861,7 @@ const PluginManifestSettingsSchema = lazySchema(() =>
       .optional()
       .describe(
         'Settings to merge when plugin is enabled. ' +
-          'Only allowlisted keys are kept (currently: agent)',
+        'Only allowlisted keys are kept (currently: agent)',
       ),
   }),
 )
@@ -933,9 +933,9 @@ export const MarketplaceSourceSchema = lazySchema(() =>
         .optional()
         .describe(
           'Directories to include via git sparse-checkout (cone mode). ' +
-            'Use for monorepos where the marketplace lives in a subdirectory. ' +
-            'Example: [".claude-plugin", "plugins"]. ' +
-            'If omitted, the full repository is cloned.',
+          'Use for monorepos where the marketplace lives in a subdirectory. ' +
+          'Example: [".claude-plugin", "plugins"]. ' +
+          'If omitted, the full repository is cloned.',
         ),
     }),
     z.object({
@@ -965,9 +965,9 @@ export const MarketplaceSourceSchema = lazySchema(() =>
         .optional()
         .describe(
           'Directories to include via git sparse-checkout (cone mode). ' +
-            'Use for monorepos where the marketplace lives in a subdirectory. ' +
-            'Example: [".claude-plugin", "plugins"]. ' +
-            'If omitted, the full repository is cloned.',
+          'Use for monorepos where the marketplace lives in a subdirectory. ' +
+          'Example: [".claude-plugin", "plugins"]. ' +
+          'If omitted, the full repository is cloned.',
         ),
     }),
     z.object({
@@ -992,9 +992,9 @@ export const MarketplaceSourceSchema = lazySchema(() =>
         .string()
         .describe(
           'Regex pattern to match the host/domain extracted from any marketplace source type. ' +
-            'For github sources, matches against "github.com". For git sources (SSH or HTTPS), ' +
-            'extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all ' +
-            'marketplaces from a specific host (e.g., "^github\\.mycompany\\.com$").',
+          'For github sources, matches against "github.com". For git sources (SSH or HTTPS), ' +
+          'extracts the hostname from the URL. Use in strictKnownMarketplaces to allow all ' +
+          'marketplaces from a specific host (e.g., "^github\\.mycompany\\.com$").',
         ),
     }),
     z.object({
@@ -1003,10 +1003,10 @@ export const MarketplaceSourceSchema = lazySchema(() =>
         .string()
         .describe(
           'Regex pattern matched against the .path field of file and directory sources. ' +
-            'Use in strictKnownMarketplaces to allow filesystem-based marketplaces alongside ' +
-            'hostPattern restrictions for network sources. Use ".*" to allow all filesystem ' +
-            'paths, or a narrower pattern (e.g., "^/opt/approved/") to restrict to specific ' +
-            'directories.',
+          'Use in strictKnownMarketplaces to allow filesystem-based marketplaces alongside ' +
+          'hostPattern restrictions for network sources. Use ".*" to allow all filesystem ' +
+          'paths, or a narrower pattern (e.g., "^/opt/approved/") to restrict to specific ' +
+          'directories.',
         ),
     }),
     z
@@ -1025,9 +1025,9 @@ export const MarketplaceSourceSchema = lazySchema(() =>
           )
           .describe(
             'Marketplace name. Must match the extraKnownMarketplaces key (enforced); ' +
-              'the synthetic manifest is written under this name. Same validation ' +
-              'as PluginMarketplaceSchema plus reserved-name rejection \u2014 ' +
-              'validateOfficialNameSource runs after the disk write, too late to clean up.',
+            'the synthetic manifest is written under this name. Same validation ' +
+            'as PluginMarketplaceSchema plus reserved-name rejection \u2014 ' +
+            'validateOfficialNameSource runs after the disk write, too late to clean up.',
           ),
         plugins: z
           .array(SettingsMarketplacePluginSchema())
@@ -1036,9 +1036,9 @@ export const MarketplaceSourceSchema = lazySchema(() =>
       })
       .describe(
         'Inline marketplace manifest defined directly in settings.json. ' +
-          'The reconciler writes a synthetic marketplace.json to the cache; ' +
-          'diffMarketplaces detects edits via isEqual on the stored source ' +
-          '(the plugins array is inside this object, so edits surface as sourceChanged).',
+        'The reconciler writes a synthetic marketplace.json to the cache; ' +
+        'diffMarketplaces detects edits via isEqual on the stored source ' +
+        '(the plugins array is inside this object, so edits surface as sourceChanged).',
       ),
   ]),
 )
@@ -1141,7 +1141,7 @@ export const PluginSourceSchema = lazySchema(() =>
           .min(1)
           .describe(
             'Subdirectory within the repo containing the plugin (e.g., "tools/claude-plugin"). ' +
-              'Cloned sparsely using partial clone (--filter=tree:0) to minimize bandwidth for monorepos.',
+            'Cloned sparsely using partial clone (--filter=tree:0) to minimize bandwidth for monorepos.',
           ),
         ref: z
           .string()
@@ -1153,7 +1153,7 @@ export const PluginSourceSchema = lazySchema(() =>
       })
       .describe(
         'Plugin located in a subdirectory of a larger repository (monorepo). ' +
-          'Only the specified subdirectory is materialized; the rest of the repo is not downloaded.',
+        'Only the specified subdirectory is materialized; the rest of the repo is not downloaded.',
       ),
     // TODO (future work) gist
     // TODO (future work) single file?
@@ -1192,7 +1192,7 @@ const SettingsMarketplacePluginSchema = lazySchema(() =>
         .describe('Plugin name as it appears in the target repository'),
       source: PluginSourceSchema().describe(
         'Where to fetch the plugin from. Must be a remote source — relative ' +
-          'paths have no marketplace repository to resolve against.',
+        'paths have no marketplace repository to resolve against.',
       ),
       description: z.string().optional(),
       version: z.string().optional(),
@@ -1228,7 +1228,7 @@ export function isLocalPluginSource(source: PluginSource): source is string {
  * For local sources (`file`/`directory`), `installLocation` IS the user's path —
  * it lives outside the plugins cache dir and marketplace operations on it are
  * read-only. For remote sources (`github`/`git`/`url`/`npm`), `installLocation`
- * is a cache-dir entry managed by Claude Code and subject to rm/re-clone.
+ * is a cache-dir entry managed byCode Forge and subject to rm/re-clone.
  *
  * Contrast with isLocalPluginSource, which operates on PluginSource (the
  * per-plugin source inside a marketplace entry) and checks for `./` prefix.
@@ -1465,10 +1465,10 @@ export const InstalledPluginSchema = lazySchema(() =>
  * Schema for the installed_plugins.json file (V1 format)
  *
  * Contains a version number and maps plugin IDs to their installation metadata.
- * Maintained automatically by Claude Code, not edited by users.
+ * Maintained automatically byCode Forge, not edited by users.
  *
  * The version field tracks schema changes. When the version doesn't match
- * the current schema version, Claude Code will update the file on next startup.
+ * the current schema version,Code Forge will update the file on next startup.
  *
  * Example file:
  * {

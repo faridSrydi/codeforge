@@ -16,7 +16,7 @@ source ~/.bash_profile  # or restart your terminal
 # 2. Install dependencies
 npm install --legacy-peer-deps
 
-# 3. Run Claude Code
+# 3. RunCode Forge
 bun run start
 
 # Or with arguments:
@@ -29,7 +29,7 @@ bun run start -- -p "Hello Claude"
 
 | Script | Description |
 |--------|-------------|
-| `bun run start` | Run Claude Code CLI |
+| `bun run start` | RunCode Forge CLI |
 | `bun run dev` | Run with hot-reloading (--watch) |
 | `bun run build` | Bundle for production |
 | `bun run typecheck` | Run TypeScript type checking |
@@ -113,7 +113,7 @@ src/
 
 ### 1. Tool System (`src/tools/`)
 
-Every tool Claude Code can invoke is implemented as a self-contained module. Each tool defines its input schema, permission model, and execution logic.
+Every toolCode Forge can invoke is implemented as a self-contained module. Each tool defines its input schema, permission model, and execution logic.
 
 | Tool | Description |
 |---|---|
@@ -187,7 +187,7 @@ User-facing slash commands invoked with `/` prefix.
 
 ### 4. Bridge System (`src/bridge/`)
 
-A bidirectional communication layer connecting IDE extensions (VS Code, JetBrains) with the Claude Code CLI.
+A bidirectional communication layer connecting IDE extensions (VS Code, JetBrains) with theCode Forge CLI.
 
 - `bridgeMain.ts` — Bridge main loop
 - `bridgeMessaging.ts` — Message protocol

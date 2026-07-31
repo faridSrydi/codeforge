@@ -28,6 +28,7 @@ import { LIGHTNING_BOLT } from '../../constants/figures.js'
 import { isModelAllowed } from './modelAllowlist.js'
 import { type ModelAlias, isModelAlias } from './aliases.js'
 import { capitalize } from '../stringUtils.js'
+import { getVPSCredentials } from '../vpsAuthStorage.js'
 
 export type ModelShortName = string
 export type ModelName = string
@@ -90,6 +91,9 @@ export function getUserSpecifiedModelSetting(): ModelSetting | undefined {
  * @returns The resolved model name to use
  */
 export function getMainLoopModel(): ModelName {
+  if (getVPSCredentials()) {
+    return 'qwen2.5-coder:14b'
+  }
   const model = getUserSpecifiedModelSetting()
   if (model !== undefined && model !== null) {
     return parseUserSpecifiedModel(model)
@@ -332,6 +336,9 @@ export function isOpus1mMergeEnabled(): boolean {
 }
 
 export function renderModelSetting(setting: ModelName | ModelAlias): string {
+  if (getVPSCredentials()) {
+    return 'Qwen2.5-Coder 14B'
+  }
   if (setting === 'opusplan') {
     return 'Opus Plan'
   }
@@ -445,6 +452,9 @@ export function getPublicModelName(model: ModelName): string {
 export function parseUserSpecifiedModel(
   modelInput: ModelName | ModelAlias,
 ): ModelName {
+  if (getVPSCredentials()) {
+    return 'qwen2.5-coder:14b'
+  }
   const modelInputTrimmed = modelInput.trim()
   const normalizedModel = modelInputTrimmed.toLowerCase()
 
@@ -566,8 +576,22 @@ export function modelDisplayString(model: ModelSetting): string {
   return model === resolvedModel ? resolvedModel : `${model} (${resolvedModel})`
 }
 
-// @[MODEL LAUNCH]: Add a marketing name mapping for the new model below.
 export function getMarketingNameForModel(modelId: string): string | undefined {
+  if (getVPSCredentials()) {
+    return 'Qwen2.5 Coder 14B (VPS)'
+  }
+  return undefined
+}
+
+export function getPrettyModelName(modelId?: string): string | undefined {
+  if (getVPSCredentials()) {
+    return 'Qwen2.5 Coder 14B (VPS)'
+  }
+
+  if (!modelId) {
+    return undefined
+  }
+
   if (getAPIProvider() === 'foundry') {
     // deployment ID is user-defined in Foundry, so it may have no relation to the actual model
     return undefined
@@ -614,5 +638,8 @@ export function getMarketingNameForModel(modelId: string): string | undefined {
 }
 
 export function normalizeModelStringForAPI(model: string): string {
+  if (getVPSCredentials()) {
+    return 'qwen2.5-coder:14b'
+  }
   return model.replace(/\[(1|2)m\]/gi, '')
 }

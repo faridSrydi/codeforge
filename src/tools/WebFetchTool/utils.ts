@@ -100,7 +100,7 @@ function getTurndownService(): Promise<InstanceType<TurndownCtor>> {
 // for a data exfiltration. However, this is too restrictive for some customers'
 // legitimate use cases, such as JWT-signed URLs (e.g., cloud service signed URLs)
 // that can be much longer. We already require user approval for each domain,
-// which provides a primary security boundary. In addition, Claude Code has
+// which provides a primary security boundary. In addition,Code Forge has
 // other data exfil channels, and this one does not seem relatively high risk,
 // so I'm removing that length restriction. -ab
 const MAX_URL_LENGTH = 2000
@@ -426,10 +426,10 @@ export async function getURLMarkdownContent(
   }
 
   const rawBuffer = Buffer.from(response.data)
-  // Release the axios-held ArrayBuffer copy; rawBuffer owns the bytes now.
-  // This lets GC reclaim up to MAX_HTTP_CONTENT_LENGTH (10MB) before Turndown
-  // builds its DOM tree (which can be 3-5x the HTML size).
-  ;(response as { data: unknown }).data = null
+    // Release the axios-held ArrayBuffer copy; rawBuffer owns the bytes now.
+    // This lets GC reclaim up to MAX_HTTP_CONTENT_LENGTH (10MB) before Turndown
+    // builds its DOM tree (which can be 3-5x the HTML size).
+    ; (response as { data: unknown }).data = null
   const contentType = response.headers['content-type'] ?? ''
 
   // Binary content: save raw bytes to disk with a proper extension so Claude
@@ -492,7 +492,7 @@ export async function applyPromptToMarkdown(
   const truncatedContent =
     markdownContent.length > MAX_MARKDOWN_LENGTH
       ? markdownContent.slice(0, MAX_MARKDOWN_LENGTH) +
-        '\n\n[Content truncated due to length...]'
+      '\n\n[Content truncated due to length...]'
       : markdownContent
 
   const modelPrompt = makeSecondaryModelPrompt(

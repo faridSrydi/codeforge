@@ -146,7 +146,7 @@ async function registerLinux(claudePath: string): Promise<void> {
 
   const desktopEntry = `[Desktop Entry]
 Name=${APP_NAME}
-Comment=Handle ${DEEP_LINK_PROTOCOL}:// deep links for Claude Code
+Comment=Handle ${DEEP_LINK_PROTOCOL}:// deep links forCode Forge
 ${linuxExecLine(claudePath)}
 Type=Application
 NoDisplay=true
@@ -329,7 +329,7 @@ export async function ensureDeepLinkProtocolRegistered(): Promise<void> {
     await registerProtocolHandler(claudePath)
     logEvent('tengu_deep_link_registered', { success: true })
     logForDebugging('Auto-registered claude-cli:// deep link protocol handler')
-    await fs.rm(failureMarkerPath, { force: true }).catch(() => {})
+    await fs.rm(failureMarkerPath, { force: true }).catch(() => { })
   } catch (error) {
     const code = getErrnoCode(error)
     logEvent('tengu_deep_link_registered', {
@@ -342,7 +342,7 @@ export async function ensureDeepLinkProtocolRegistered(): Promise<void> {
       { level: 'warn' },
     )
     if (code === 'EACCES' || code === 'ENOSPC') {
-      await fs.writeFile(failureMarkerPath, '').catch(() => {})
+      await fs.writeFile(failureMarkerPath, '').catch(() => { })
     }
   }
 }

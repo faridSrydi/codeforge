@@ -1,5 +1,5 @@
 /**
- * Main entrypoint for Claude Code Agent SDK types.
+ * Main entrypoint forCode Forge Agent SDK types.
  *
  * This file re-exports the public SDK API from:
  * - sdk/coreTypes.ts - Common serializable types (messages, configs)
@@ -106,7 +106,7 @@ export function createSdkMcpServer(
   throw new Error('not implemented')
 }
 
-export class AbortError extends Error {}
+export class AbortError extends Error { }
 
 /** @internal */
 export function query(_params: {

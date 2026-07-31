@@ -2,7 +2,7 @@
  * SDK MCP Transport Bridge
  *
  * This file implements a transport bridge that allows MCP servers running in the SDK process
- * to communicate with the Claude Code CLI process through control messages.
+ * to communicate with theCode Forge CLI process through control messages.
  *
  * ## Architecture Overview
  *
@@ -67,9 +67,9 @@ export class SdkControlClientTransport implements Transport {
   constructor(
     private serverName: string,
     private sendMcpMessage: SendMcpMessageCallback,
-  ) {}
+  ) { }
 
-  async start(): Promise<void> {}
+  async start(): Promise<void> { }
 
   async send(message: JSONRPCMessage): Promise<void> {
     if (this.isClosed) {
@@ -109,13 +109,13 @@ export class SdkControlClientTransport implements Transport {
 export class SdkControlServerTransport implements Transport {
   private isClosed = false
 
-  constructor(private sendMcpMessage: (message: JSONRPCMessage) => void) {}
+  constructor(private sendMcpMessage: (message: JSONRPCMessage) => void) { }
 
   onclose?: () => void
   onerror?: (error: Error) => void
   onmessage?: (message: JSONRPCMessage) => void
 
-  async start(): Promise<void> {}
+  async start(): Promise<void> { }
 
   async send(message: JSONRPCMessage): Promise<void> {
     if (this.isClosed) {

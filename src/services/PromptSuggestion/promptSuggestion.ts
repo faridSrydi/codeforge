@@ -255,7 +255,7 @@ export function getParentCacheSuppressReason(
     : null
 }
 
-const SUGGESTION_PROMPT = `[SUGGESTION MODE: Suggest what the user might naturally type next into Claude Code.]
+const SUGGESTION_PROMPT = `[SUGGESTION MODE: Suggest what the user might naturally type next intoCode Forge.]
 
 FIRST: Look at the user's recent messages and original request.
 
@@ -516,8 +516,8 @@ export function logSuggestionSuppressed(
       resolvedPromptId as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
     ...(process.env.USER_TYPE === 'ant' &&
       suggestion && {
-        suggestion:
-          suggestion as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
-      }),
+      suggestion:
+        suggestion as AnalyticsMetadata_I_VERIFIED_THIS_IS_NOT_CODE_OR_FILEPATHS,
+    }),
   })
 }

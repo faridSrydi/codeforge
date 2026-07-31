@@ -16,7 +16,7 @@ import { getProjectTempDir } from '../permissions/filesystem.js'
 
 // SECURITY: O_NOFOLLOW prevents following symlinks when opening task output files.
 // Without this, an attacker in the sandbox could create symlinks in the tasks directory
-// pointing to arbitrary files, causing Claude Code on the host to write to those files.
+// pointing to arbitrary files, causingCode Forge on the host to write to those files.
 // O_NOFOLLOW is not available on Windows, but the sandbox attack vector is Unix-only.
 const O_NOFOLLOW = fsConstants.O_NOFOLLOW ?? 0
 
@@ -82,7 +82,7 @@ export function getTaskOutputPath(taskId: string): string {
 const _pendingOps = new Set<Promise<unknown>>()
 function track<T>(p: Promise<T>): Promise<T> {
   _pendingOps.add(p)
-  void p.finally(() => _pendingOps.delete(p)).catch(() => {})
+  void p.finally(() => _pendingOps.delete(p)).catch(() => { })
   return p
 }
 
@@ -148,9 +148,9 @@ export class DiskTaskOutput {
             process.platform === 'win32'
               ? 'a'
               : fsConstants.O_WRONLY |
-                  fsConstants.O_APPEND |
-                  fsConstants.O_CREAT |
-                  O_NOFOLLOW,
+              fsConstants.O_APPEND |
+              fsConstants.O_CREAT |
+              O_NOFOLLOW,
           )
         }
         while (true) {
@@ -410,9 +410,9 @@ export function initTaskOutput(taskId: string): Promise<string> {
         process.platform === 'win32'
           ? 'wx'
           : fsConstants.O_WRONLY |
-              fsConstants.O_CREAT |
-              fsConstants.O_EXCL |
-              O_NOFOLLOW,
+          fsConstants.O_CREAT |
+          fsConstants.O_EXCL |
+          O_NOFOLLOW,
       )
       await fh.close()
       return outputPath

@@ -30,7 +30,7 @@ import { jsonParse } from './slowOperations.js'
 const GCS_BUCKET_URL =
   'https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases'
 
-class AutoUpdaterError extends ClaudeError {}
+class AutoUpdaterError extends ClaudeError { }
 
 export type InstallStatus =
   | 'success'
@@ -68,34 +68,7 @@ export type MaxVersionConfig = {
  * This approach keeps version comparison logic simple while maintaining traceability via the SHA.
  */
 export async function assertMinVersion(): Promise<void> {
-  if (process.env.NODE_ENV === 'test') {
-    return
-  }
-
-  try {
-    const versionConfig = await getDynamicConfig_BLOCKS_ON_INIT<{
-      minVersion: string
-    }>('tengu_version_config', { minVersion: '0.0.0' })
-
-    if (
-      versionConfig.minVersion &&
-      lt(MACRO.VERSION, versionConfig.minVersion)
-    ) {
-      // biome-ignore lint/suspicious/noConsole:: intentional console output
-      console.error(`
-It looks like your version of Claude Code (${MACRO.VERSION}) needs an update.
-A newer version (${versionConfig.minVersion} or higher) is required to continue.
-
-To update, please run:
-    claude update
-
-This will ensure you have access to the latest features and improvements.
-`)
-      gracefulShutdownSync(1)
-    }
-  } catch (error) {
-    logError(error as Error)
-  }
+  return;
 }
 
 /**
@@ -482,7 +455,7 @@ export async function installGlobalPackage(
       console.error(`
 Error: Windows NPM detected in WSL
 
-You're running Claude Code in WSL but using the Windows NPM installation from /mnt/c/.
+You're runningCode Forge in WSL but using the Windows NPM installation from /mnt/c/.
 This configuration is not supported for updates.
 
 To fix this issue:

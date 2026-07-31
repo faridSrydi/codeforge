@@ -52,12 +52,12 @@ const EOL = '\n';
  * Stored as canonical (lowercase) cmdlet names.
  */
 const PS_SEARCH_COMMANDS = new Set(['select-string',
-// grep equivalent
-'get-childitem',
-// find equivalent (with -Recurse)
-'findstr',
-// native Windows search
-'where.exe' // native Windows which
+  // grep equivalent
+  'get-childitem',
+  // find equivalent (with -Recurse)
+  'findstr',
+  // native Windows search
+  'where.exe' // native Windows which
 ]);
 
 /**
@@ -65,34 +65,34 @@ const PS_SEARCH_COMMANDS = new Set(['select-string',
  * Stored as canonical (lowercase) cmdlet names.
  */
 const PS_READ_COMMANDS = new Set(['get-content',
-// cat equivalent
-'get-item',
-// file info
-'test-path',
-// test -e equivalent
-'resolve-path',
-// realpath equivalent
-'get-process',
-// ps equivalent
-'get-service',
-// system info
-'get-childitem',
-// ls/dir equivalent (also search when recursive)
-'get-location',
-// pwd equivalent
-'get-filehash',
-// checksum
-'get-acl',
-// permissions info
-'format-hex' // hexdump equivalent
+  // cat equivalent
+  'get-item',
+  // file info
+  'test-path',
+  // test -e equivalent
+  'resolve-path',
+  // realpath equivalent
+  'get-process',
+  // ps equivalent
+  'get-service',
+  // system info
+  'get-childitem',
+  // ls/dir equivalent (also search when recursive)
+  'get-location',
+  // pwd equivalent
+  'get-filehash',
+  // checksum
+  'get-acl',
+  // permissions info
+  'format-hex' // hexdump equivalent
 ]);
 
 /**
  * PowerShell semantic-neutral commands that don't change the search/read nature.
  */
 const PS_SEMANTIC_NEUTRAL_COMMANDS = new Set(['write-output',
-// echo equivalent
-'write-host']);
+  // echo equivalent
+  'write-host']);
 
 /**
  * Checks if a PowerShell command is a search or read operation.
@@ -165,8 +165,8 @@ const ASSISTANT_BLOCKING_BUDGET_MS = 15_000;
 // 'sleep' is a PS built-in alias for Start-Sleep but not in COMMON_ALIASES,
 // so list both forms.
 const DISALLOWED_AUTO_BACKGROUND_COMMANDS = ['start-sleep',
-// Start-Sleep should run in foreground unless explicitly backgrounded
-'sleep'];
+  // Start-Sleep should run in foreground unless explicitly backgrounded
+  'sleep'];
 
 /**
  * Checks if a command is allowed to be automatically backgrounded
@@ -223,8 +223,8 @@ function isWindowsSandboxPolicyViolation(): boolean {
 
 // Check if background tasks are disabled at module load time
 const isBackgroundTasksDisabled =
-// eslint-disable-next-line custom-rules/no-process-env-top-level -- Intentional: schema must be defined at module load
-isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_BACKGROUND_TASKS);
+  // eslint-disable-next-line custom-rules/no-process-env-top-level -- Intentional: schema must be defined at module load
+  isEnvTruthy(process.env.CLAUDE_CODE_DISABLE_BACKGROUND_TASKS);
 const fullInputSchema = lazySchema(() => z.strictObject({
   command: z.string().describe('The PowerShell command to execute'),
   timeout: semanticNumber(z.number().optional()).describe(`Optional timeout in milliseconds (max ${getMaxTimeoutMs()})`),
@@ -561,7 +561,7 @@ export const PowerShellTool = buildTool({
 
       let stdout = stripEmptyLines(stdoutAccumulator.toString());
 
-      // Claude Code hints protocol: CLIs/SDKs gated on CLAUDECODE=1 emit a
+      //Code Forge hints protocol: CLIs/SDKs gated on CLAUDECODE=1 emit a
       // `<claude-code-hint />` tag to stderr (merged into stdout here). Scan,
       // record for useClaudeCodeHintRecommendation to surface, then strip
       // so the model never sees the tag — a zero-token side channel.

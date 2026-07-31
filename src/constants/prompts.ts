@@ -65,8 +65,8 @@ import { isMcpInstructionsDeltaEnabled } from '../utils/mcpInstructionsDelta.js'
 /* eslint-disable @typescript-eslint/no-require-imports */
 const getCachedMCConfigForFRC = feature('CACHED_MICROCOMPACT')
   ? (
-      require('../services/compact/cachedMCConfig.js') as typeof import('../services/compact/cachedMCConfig.js')
-    ).getCachedMCConfig
+    require('../services/compact/cachedMCConfig.js') as typeof import('../services/compact/cachedMCConfig.js')
+  ).getCachedMCConfig
   : null
 
 const proactiveModule =
@@ -76,8 +76,8 @@ const proactiveModule =
 const BRIEF_PROACTIVE_SECTION: string | null =
   feature('KAIROS') || feature('KAIROS_BRIEF')
     ? (
-        require('../tools/BriefTool/prompt.js') as typeof import('../tools/BriefTool/prompt.js')
-      ).BRIEF_PROACTIVE_SECTION
+      require('../tools/BriefTool/prompt.js') as typeof import('../tools/BriefTool/prompt.js')
+    ).BRIEF_PROACTIVE_SECTION
     : null
 const briefToolModule =
   feature('KAIROS') || feature('KAIROS_BRIEF')
@@ -87,8 +87,8 @@ const DISCOVER_SKILLS_TOOL_NAME: string | null = feature(
   'EXPERIMENTAL_SKILL_SEARCH',
 )
   ? (
-      require('../tools/DiscoverSkillsTool/prompt.js') as typeof import('../tools/DiscoverSkillsTool/prompt.js')
-    ).DISCOVER_SKILLS_TOOL_NAME
+    require('../tools/DiscoverSkillsTool/prompt.js') as typeof import('../tools/DiscoverSkillsTool/prompt.js')
+  ).DISCOVER_SKILLS_TOOL_NAME
   : null
 // Capture the module (not .isSkillSearchEnabled directly) so spyOn() in tests
 // patches what we actually call — a captured function ref would point past the spy.
@@ -204,17 +204,17 @@ function getSimpleDoingTasksSection(): string {
     // @[MODEL LAUNCH]: Update comment writing for Capybara — remove or soften once the model stops over-commenting by default
     ...(process.env.USER_TYPE === 'ant'
       ? [
-          `Default to writing no comments. Only add one when the WHY is non-obvious: a hidden constraint, a subtle invariant, a workaround for a specific bug, behavior that would surprise a reader. If removing the comment wouldn't confuse a future reader, don't write it.`,
-          `Don't explain WHAT the code does, since well-named identifiers already do that. Don't reference the current task, fix, or callers ("used by X", "added for the Y flow", "handles the case from issue #123"), since those belong in the PR description and rot as the codebase evolves.`,
-          `Don't remove existing comments unless you're removing the code they describe or you know they're wrong. A comment that looks pointless to you may encode a constraint or a lesson from a past bug that isn't visible in the current diff.`,
-          // @[MODEL LAUNCH]: capy v8 thoroughness counterweight (PR #24302) — un-gate once validated on external via A/B
-          `Before reporting a task complete, verify it actually works: run the test, execute the script, check the output. Minimum complexity means no gold-plating, not skipping the finish line. If you can't verify (no test exists, can't run the code), say so explicitly rather than claiming success.`,
-        ]
+        `Default to writing no comments. Only add one when the WHY is non-obvious: a hidden constraint, a subtle invariant, a workaround for a specific bug, behavior that would surprise a reader. If removing the comment wouldn't confuse a future reader, don't write it.`,
+        `Don't explain WHAT the code does, since well-named identifiers already do that. Don't reference the current task, fix, or callers ("used by X", "added for the Y flow", "handles the case from issue #123"), since those belong in the PR description and rot as the codebase evolves.`,
+        `Don't remove existing comments unless you're removing the code they describe or you know they're wrong. A comment that looks pointless to you may encode a constraint or a lesson from a past bug that isn't visible in the current diff.`,
+        // @[MODEL LAUNCH]: capy v8 thoroughness counterweight (PR #24302) — un-gate once validated on external via A/B
+        `Before reporting a task complete, verify it actually works: run the test, execute the script, check the output. Minimum complexity means no gold-plating, not skipping the finish line. If you can't verify (no test exists, can't run the code), say so explicitly rather than claiming success.`,
+      ]
       : []),
   ]
 
   const userHelpSubitems = [
-    `/help: Get help with using Claude Code`,
+    `/help: Get help with usingCode Forge`,
     `To give feedback, users should ${MACRO.ISSUES_EXPLAINER}`,
   ]
 
@@ -224,8 +224,8 @@ function getSimpleDoingTasksSection(): string {
     // @[MODEL LAUNCH]: capy v8 assertiveness counterweight (PR #24302) — un-gate once validated on external via A/B
     ...(process.env.USER_TYPE === 'ant'
       ? [
-          `If you notice the user's request is based on a misconception, or spot a bug adjacent to what they asked about, say so. You're a collaborator, not just an executor—users benefit from your judgment, not just your compliance.`,
-        ]
+        `If you notice the user's request is based on a misconception, or spot a bug adjacent to what they asked about, say so. You're a collaborator, not just an executor—users benefit from your judgment, not just your compliance.`,
+      ]
       : []),
     `In general, do not propose changes to code you haven't read. If a user asks about or wants you to modify a file, read it first. Understand existing code before suggesting modifications.`,
     `Do not create files unless they're absolutely necessary for achieving your goal. Generally prefer editing an existing file to creating a new one, as this prevents file bloat and builds on existing work more effectively.`,
@@ -237,13 +237,13 @@ function getSimpleDoingTasksSection(): string {
     // @[MODEL LAUNCH]: False-claims mitigation for Capybara v8 (29-30% FC rate vs v4's 16.7%)
     ...(process.env.USER_TYPE === 'ant'
       ? [
-          `Report outcomes faithfully: if tests fail, say so with the relevant output; if you did not run a verification step, say that rather than implying it succeeded. Never claim "all tests pass" when output shows failures, never suppress or simplify failing checks (tests, lints, type errors) to manufacture a green result, and never characterize incomplete or broken work as done. Equally, when a check did pass or a task is complete, state it plainly — do not hedge confirmed results with unnecessary disclaimers, downgrade finished work to "partial," or re-verify things you already checked. The goal is an accurate report, not a defensive one.`,
-        ]
+        `Report outcomes faithfully: if tests fail, say so with the relevant output; if you did not run a verification step, say that rather than implying it succeeded. Never claim "all tests pass" when output shows failures, never suppress or simplify failing checks (tests, lints, type errors) to manufacture a green result, and never characterize incomplete or broken work as done. Equally, when a check did pass or a task is complete, state it plainly — do not hedge confirmed results with unnecessary disclaimers, downgrade finished work to "partial," or re-verify things you already checked. The goal is an accurate report, not a defensive one.`,
+      ]
       : []),
     ...(process.env.USER_TYPE === 'ant'
       ? [
-          `If the user reports a bug, slowness, or unexpected behavior with Claude Code itself (as opposed to asking you to fix their own code), recommend the appropriate slash command: /issue for model-related problems (odd outputs, wrong tool choices, hallucinations, refusals), or /share to upload the full session transcript for product bugs, crashes, slowness, or general issues. Only recommend these when the user is describing a problem with Claude Code. After /share produces a ccshare link, if you have a Slack MCP tool available, offer to post the link to #claude-code-feedback (channel ID C07VBSHV7EV) for the user.`,
-        ]
+        `If the user reports a bug, slowness, or unexpected behavior withCode Forge itself (as opposed to asking you to fix their own code), recommend the appropriate slash command: /issue for model-related problems (odd outputs, wrong tool choices, hallucinations, refusals), or /share to upload the full session transcript for product bugs, crashes, slowness, or general issues. Only recommend these when the user is describing a problem withCode Forge. After /share produces a ccshare link, if you have a Slack MCP tool available, offer to post the link to #claude-code-feedback (channel ID C07VBSHV7EV) for the user.`,
+      ]
       : []),
     `If the user asks for help or wants to give feedback inform them of the following:`,
     userHelpSubitems,
@@ -295,9 +295,9 @@ function getUsingYourToolsSection(enabledTools: Set<string>): string {
     ...(embedded
       ? []
       : [
-          `To search for files use ${GLOB_TOOL_NAME} instead of find or ls`,
-          `To search the content of files, use ${GREP_TOOL_NAME} instead of grep or rg`,
-        ]),
+        `To search for files use ${GLOB_TOOL_NAME} instead of find or ls`,
+        `To search the content of files, use ${GREP_TOOL_NAME} instead of grep or rg`,
+      ]),
     `Reserve using the ${BASH_TOOL_NAME} exclusively for system commands and terminal operations that require shell execution. If you are unsure and there is a relevant dedicated tool, default to using the dedicated tool and only fallback on using the ${BASH_TOOL_NAME} tool for these if it is absolutely necessary.`,
   ]
 
@@ -372,25 +372,25 @@ function getSessionSpecificGuidanceSection(
     // post-boundary or it fragments the static prefix on session type.
     hasAgentTool ? getAgentToolSection() : null,
     ...(hasAgentTool &&
-    areExplorePlanAgentsEnabled() &&
-    !isForkSubagentEnabled()
+      areExplorePlanAgentsEnabled() &&
+      !isForkSubagentEnabled()
       ? [
-          `For simple, directed codebase searches (e.g. for a specific file/class/function) use ${searchTools} directly.`,
-          `For broader codebase exploration and deep research, use the ${AGENT_TOOL_NAME} tool with subagent_type=${EXPLORE_AGENT.agentType}. This is slower than using ${searchTools} directly, so use this only when a simple, directed search proves to be insufficient or when your task will clearly require more than ${EXPLORE_AGENT_MIN_QUERIES} queries.`,
-        ]
+        `For simple, directed codebase searches (e.g. for a specific file/class/function) use ${searchTools} directly.`,
+        `For broader codebase exploration and deep research, use the ${AGENT_TOOL_NAME} tool with subagent_type=${EXPLORE_AGENT.agentType}. This is slower than using ${searchTools} directly, so use this only when a simple, directed search proves to be insufficient or when your task will clearly require more than ${EXPLORE_AGENT_MIN_QUERIES} queries.`,
+      ]
       : []),
     hasSkills
       ? `/<skill-name> (e.g., /commit) is shorthand for users to invoke a user-invocable skill. When executed, the skill gets expanded to a full prompt. Use the ${SKILL_TOOL_NAME} tool to execute them. IMPORTANT: Only use ${SKILL_TOOL_NAME} for skills listed in its user-invocable skills section - do not guess or use built-in CLI commands.`
       : null,
     DISCOVER_SKILLS_TOOL_NAME !== null &&
-    hasSkills &&
-    enabledTools.has(DISCOVER_SKILLS_TOOL_NAME)
+      hasSkills &&
+      enabledTools.has(DISCOVER_SKILLS_TOOL_NAME)
       ? getDiscoverSkillsGuidance()
       : null,
     hasAgentTool &&
-    feature('VERIFICATION_AGENT') &&
-    // 3P default: false — verification agent is ant-only A/B
-    getFeatureValue_CACHED_MAY_BE_STALE('tengu_hive_evidence', false)
+      feature('VERIFICATION_AGENT') &&
+      // 3P default: false — verification agent is ant-only A/B
+      getFeatureValue_CACHED_MAY_BE_STALE('tengu_hive_evidence', false)
       ? `The contract: when non-trivial implementation happens on your turn, independent adversarial verification must happen before you report completion \u2014 regardless of who did the implementing (you directly, a fork you spawned, or a subagent). You are the one reporting to the user; you own the gate. Non-trivial means: 3+ file edits, backend/API changes, or infrastructure changes. Spawn the ${AGENT_TOOL_NAME} tool with subagent_type="${VERIFICATION_AGENT_TYPE}". Your own checks, caveats, and a fork's self-checks do NOT substitute \u2014 only the verifier assigns a verdict; you cannot self-assign PARTIAL. Pass the original user request, all files changed (by anyone), the approach, and the plan file path if applicable. Flag concerns if you have them but do NOT share test results or claim things work. On FAIL: fix, resume the verifier with its findings plus your fix, repeat until PASS. On PASS: spot-check it \u2014 re-run 2-3 commands from its report, confirm every PASS has a Command run block with output that matches your re-run. If any PASS lacks a command block or diverges, resume the verifier with the specifics. On PARTIAL (from the verifier): report what passed and what could not be verified.`
       : null,
   ].filter(item => item !== null)
@@ -449,7 +449,7 @@ export async function getSystemPrompt(
 ): Promise<string[]> {
   if (isEnvTruthy(process.env.CLAUDE_CODE_SIMPLE)) {
     return [
-      `You are Claude Code, Anthropic's official CLI for Claude.\n\nCWD: ${getCwd()}\nDate: ${getSessionStartDate()}`,
+      `You areCode Forge, Anthropic's official CLI for Claude.\n\nCWD: ${getCwd()}\nDate: ${getSessionStartDate()}`,
     ]
   }
 
@@ -528,26 +528,26 @@ ${CYBER_RISK_INSTRUCTION}`,
     // qualitative "be concise". Ant-only to measure quality impact first.
     ...(process.env.USER_TYPE === 'ant'
       ? [
-          systemPromptSection(
-            'numeric_length_anchors',
-            () =>
-              'Length limits: keep text between tool calls to \u226425 words. Keep final responses to \u2264100 words unless the task requires more detail.',
-          ),
-        ]
+        systemPromptSection(
+          'numeric_length_anchors',
+          () =>
+            'Length limits: keep text between tool calls to \u226425 words. Keep final responses to \u2264100 words unless the task requires more detail.',
+        ),
+      ]
       : []),
     ...(feature('TOKEN_BUDGET')
       ? [
-          // Cached unconditionally — the "When the user specifies..." phrasing
-          // makes it a no-op with no budget active. Was DANGEROUS_uncached
-          // (toggled on getCurrentTurnTokenBudget()), busting ~20K tokens per
-          // budget flip. Not moved to a tail attachment: first-response and
-          // budget-continuation paths don't see attachments (#21577).
-          systemPromptSection(
-            'token_budget',
-            () =>
-              'When the user specifies a token target (e.g., "+500k", "spend 2M tokens", "use 1B tokens"), your output token count will be shown each turn. Keep working until you approach the target \u2014 plan your work to fill it productively. The target is a hard minimum, not a suggestion. If you stop early, the system will automatically continue you.',
-          ),
-        ]
+        // Cached unconditionally — the "When the user specifies..." phrasing
+        // makes it a no-op with no budget active. Was DANGEROUS_uncached
+        // (toggled on getCurrentTurnTokenBudget()), busting ~20K tokens per
+        // budget flip. Not moved to a tail attachment: first-response and
+        // budget-continuation paths don't see attachments (#21577).
+        systemPromptSection(
+          'token_budget',
+          () =>
+            'When the user specifies a token target (e.g., "+500k", "spend 2M tokens", "use 1B tokens"), your output token count will be shown each turn. Keep working until you approach the target \u2014 plan your work to fill it productively. The target is a hard minimum, not a suggestion. If you stop early, the system will automatically continue you.',
+        ),
+      ]
       : []),
     ...(feature('KAIROS') || feature('KAIROS_BRIEF')
       ? [systemPromptSection('brief', () => getBriefSection())]
@@ -562,7 +562,7 @@ ${CYBER_RISK_INSTRUCTION}`,
     getSimpleIntroSection(outputStyleConfig),
     getSimpleSystemSection(),
     outputStyleConfig === null ||
-    outputStyleConfig.keepCodingInstructions === true
+      outputStyleConfig.keepCodingInstructions === true
       ? getSimpleDoingTasksSection()
       : null,
     getActionsSection(),
@@ -699,7 +699,7 @@ export async function computeSimpleEnvInfo(
       : `Claude Code is available as a CLI in the terminal, desktop app (Mac/Windows), web app (claude.ai/code), and IDE extensions (VS Code, JetBrains).`,
     process.env.USER_TYPE === 'ant' && isUndercover()
       ? null
-      : `Fast mode for Claude Code uses the same ${FRONTIER_MODEL_NAME} model with faster output. It does NOT switch to a different model. It can be toggled with /fast.`,
+      : `Fast mode forCode Forge uses the same ${FRONTIER_MODEL_NAME} model with faster output. It does NOT switch to a different model. It can be toggled with /fast.`,
   ].filter(item => item !== null)
 
   return [
@@ -755,7 +755,7 @@ export function getUnameSR(): string {
   return `${osType()} ${osRelease()}`
 }
 
-export const DEFAULT_AGENT_PROMPT = `You are an agent for Claude Code, Anthropic's official CLI for Claude. Given the user's message, you should use the tools available to complete the task. Complete the task fully—don't gold-plate, but don't leave it half-done. When you complete the task, respond with a concise report covering what was done and any key findings — the caller will relay this to the user, so it only needs the essentials.`
+export const DEFAULT_AGENT_PROMPT = `You are an agent forCode Forge, Anthropic's official CLI for Claude. Given the user's message, you should use the tools available to complete the task. Complete the task fully—don't gold-plate, but don't leave it half-done. When you complete the task, respond with a concise report covering what was done and any key findings — the caller will relay this to the user, so it only needs the essentials.`
 
 export async function enhanceSystemPromptWithEnvDetails(
   existingSystemPrompt: string[],
@@ -776,9 +776,9 @@ export async function enhanceSystemPromptWithEnvDetails(
   // omits this param — `?? true` preserves guidance there.
   const discoverSkillsGuidance =
     feature('EXPERIMENTAL_SKILL_SEARCH') &&
-    skillSearchFeatureCheck?.isSkillSearchEnabled() &&
-    DISCOVER_SKILLS_TOOL_NAME !== null &&
-    (enabledToolNames?.has(DISCOVER_SKILLS_TOOL_NAME) ?? true)
+      skillSearchFeatureCheck?.isSkillSearchEnabled() &&
+      DISCOVER_SKILLS_TOOL_NAME !== null &&
+      (enabledToolNames?.has(DISCOVER_SKILLS_TOOL_NAME) ?? true)
       ? getDiscoverSkillsGuidance()
       : null
   const envInfo = await computeEnvInfo(model, additionalWorkingDirectories)

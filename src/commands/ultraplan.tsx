@@ -115,7 +115,7 @@ function startDetachedPoll(taskId: string, sessionId: string, url: string, getAp
           ultraplanSessionUrl: undefined
         } : prev);
         enqueuePendingNotification({
-          value: [`Ultraplan approved — executing in Claude Code on the web. Follow along at: ${url}`, '', 'Results will land as a pull request when the remote session finishes. There is nothing to do here.'].join('\n'),
+          value: [`Ultraplan approved — executing inCode Forge on the web. Follow along at: ${url}`, '', 'Results will land as a pull request when the remote session finishes. There is nothing to do here.'].join('\n'),
           mode: 'task-notification'
         });
       } else {
@@ -156,12 +156,12 @@ function startDetachedPoll(taskId: string, sessionId: string, url: string, getAp
       // path handled its own cleanup above.
       void archiveRemoteSession(sessionId).catch(e => logForDebugging(`ultraplan archive failed: ${String(e)}`));
       setAppState(prev =>
-      // Compare against this poll's URL so a newer relaunched session's
-      // URL isn't cleared by a stale poll erroring out.
-      prev.ultraplanSessionUrl === url ? {
-        ...prev,
-        ultraplanSessionUrl: undefined
-      } : prev);
+        // Compare against this poll's URL so a newer relaunched session's
+        // URL isn't cleared by a stale poll erroring out.
+        prev.ultraplanSessionUrl === url ? {
+          ...prev,
+          ultraplanSessionUrl: undefined
+        } : prev);
     } finally {
       // Remote path already set status=completed above; teleport path
       // leaves status=running so the pill shows the ultraplanPhase state
@@ -184,10 +184,10 @@ function startDetachedPoll(taskId: string, sessionId: string, url: string, getAp
 // multi-second teleportToRemote round-trip.
 function buildLaunchMessage(disconnectedBridge?: boolean): string {
   const prefix = disconnectedBridge ? `${REMOTE_CONTROL_DISCONNECTED_MSG} ` : '';
-  return `${DIAMOND_OPEN} ultraplan\n${prefix}Starting Claude Code on the web…`;
+  return `${DIAMOND_OPEN} ultraplan\n${prefix}StartingCode Forge on the web…`;
 }
 function buildSessionReadyMessage(url: string): string {
-  return `${DIAMOND_OPEN} ultraplan · Monitor progress in Claude Code on the web ${url}\nYou can continue working — when the ${DIAMOND_OPEN} fills, press ↓ to view results`;
+  return `${DIAMOND_OPEN} ultraplan · Monitor progress inCode Forge on the web ${url}\nYou can continue working — when the ${DIAMOND_OPEN} fills, press ↓ to view results`;
 }
 function buildAlreadyActiveMessage(url: string | undefined): string {
   return url ? `ultraplan: already polling. Open ${url} to check status, or wait for the plan to land here.` : 'ultraplan: already launching. Please wait for the session to start.';
@@ -270,9 +270,9 @@ export async function launchUltraplan(opts: {
   if (!blurb && !seedPlan) {
     // No event — bare /ultraplan is a usage query, not an attempt.
     return [
-    // Rendered via <Markdown>; raw <message> is tokenized as HTML
-    // and dropped. Backslash-escape the brackets.
-    'Usage: /ultraplan \\<prompt\\>, or include "ultraplan" anywhere', 'in your prompt', '', 'Advanced multi-agent plan mode with our most powerful model', '(Opus). Runs in Claude Code on the web. When the plan is ready,', 'you can execute it in the web session or send it back here.', 'Terminal stays free while the remote plans.', 'Requires /login.', '', `Terms: ${CCR_TERMS_URL}`].join('\n');
+      // Rendered via <Markdown>; raw <message> is tokenized as HTML
+      // and dropped. Backslash-escape the brackets.
+      'Usage: /ultraplan \\<prompt\\>, or include "ultraplan" anywhere', 'in your prompt', '', 'Advanced multi-agent plan mode with our most powerful model', '(Opus). Runs inCode Forge on the web. When the plan is ready,', 'you can execute it in the web session or send it back here.', 'Terminal stays free while the remote plans.', 'Requires /login.', '', `Terms: ${CCR_TERMS_URL}`].join('\n');
   }
 
   // Set synchronously before the detached flow to prevent duplicate launches
@@ -461,7 +461,7 @@ const call: LocalJSXCommandCall = async (onDone, context, args) => {
 export default {
   type: 'local-jsx',
   name: 'ultraplan',
-  description: `~10–30 min · Claude Code on the web drafts an advanced plan you can edit and approve. See ${CCR_TERMS_URL}`,
+  description: `~10–30 min ·Code Forge on the web drafts an advanced plan you can edit and approve. See ${CCR_TERMS_URL}`,
   argumentHint: '<prompt>',
   isEnabled: () => "external" === 'ant',
   load: () => Promise.resolve({
