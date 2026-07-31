@@ -8,7 +8,7 @@ const DEFAULT_MODEL = process.env.DEFAULT_MODEL || 'qwen2.5-coder:14b';
 
 /**
  * POST /v1/messages, /v1/beta/messages
- * Anthropic-compatible Messages API proxy → Ollama
+ * Anthropic-compatible Messages API proxy → Ollama (with native Tool Use support)
  */
 router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, res) => {
   const startTime = Date.now();
@@ -39,7 +39,7 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
     }
 
     // ── Parse Anthropic-format request ──
-    const { messages, model, max_tokens, system, stream, temperature, top_p, stop_sequences } = req.body;
+    const { messages, model, max_tokens, system, stream, temperature, top_p, stop_sequences, tools } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({
@@ -47,6 +47,16 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
         error: { type: 'invalid_request_error', message: '"messages" field is required and must be an array.' }
       });
     }
+
+    // Convert Anthropic tools → Ollama format
+    const ollamaTools = Array.isArray(tools) && tools.length > 0 ? tools.map(t => ({
+      type: 'function',
+      function: {
+        name: t.name,
+        description: t.description || '',
+        parameters: t.input_schema || { type: 'object', properties: {} }
+      }
+    })) : undefined;
 
     // ── Convert Anthropic messages → Ollama format ──
     const ollamaMessages = [];
@@ -66,19 +76,39 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
     // Convert messages
     for (const msg of messages) {
       const role = msg.role === 'assistant' ? 'assistant' : 'user';
-      let content = '';
 
       if (typeof msg.content === 'string') {
-        content = msg.content;
+        ollamaMessages.push({ role, content: msg.content });
       } else if (Array.isArray(msg.content)) {
-        // Extract text blocks from content array
-        content = msg.content
-          .filter(b => b.type === 'text')
-          .map(b => b.text)
-          .join('\n');
-      }
+        let textContent = '';
+        const toolCalls = [];
 
-      ollamaMessages.push({ role, content });
+        for (const block of msg.content) {
+          if (block.type === 'text') {
+            textContent += (textContent ? '\n' : '') + block.text;
+          } else if (block.type === 'tool_use') {
+            toolCalls.push({
+              function: {
+                name: block.name,
+                arguments: block.input || {}
+              }
+            });
+          } else if (block.type === 'tool_result') {
+            const resContent = typeof block.content === 'string'
+              ? block.content
+              : Array.isArray(block.content)
+                ? block.content.map(b => b.text || '').join('\n')
+                : JSON.stringify(block.content || '');
+            textContent += `\n[Tool Result for ${block.tool_use_id}]:\n${resContent}`;
+          }
+        }
+
+        const msgObj = { role, content: textContent };
+        if (toolCalls.length > 0) {
+          msgObj.tool_calls = toolCalls;
+        }
+        ollamaMessages.push(msgObj);
+      }
     }
 
     const ollamaModel = DEFAULT_MODEL;
@@ -89,7 +119,6 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
 
-      // Send message_start event
       const messageId = `msg_${Date.now()}`;
       res.write(`event: message_start\ndata: ${JSON.stringify({
         type: 'message_start',
@@ -104,7 +133,6 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
         }
       })}\n\n`);
 
-      // Send content_block_start
       res.write(`event: content_block_start\ndata: ${JSON.stringify({
         type: 'content_block_start',
         index: 0,
@@ -119,6 +147,7 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
             model: ollamaModel,
             messages: ollamaMessages,
             stream: true,
+            ...(ollamaTools && { tools: ollamaTools }),
             options: {
               ...(temperature !== undefined && { temperature }),
               ...(top_p !== undefined && { top_p }),
@@ -144,6 +173,7 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
         let totalOutputTokens = 0;
         let totalInputTokens = 0;
         let buffer = '';
+        let currentBlockIndex = 0;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -158,12 +188,36 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
             try {
               const chunk = JSON.parse(line);
 
+              // Standard text content
               if (chunk.message?.content) {
                 res.write(`event: content_block_delta\ndata: ${JSON.stringify({
                   type: 'content_block_delta',
-                  index: 0,
+                  index: currentBlockIndex,
                   delta: { type: 'text_delta', text: chunk.message.content }
                 })}\n\n`);
+              }
+
+              // Tool calls from model
+              if (chunk.message?.tool_calls && Array.isArray(chunk.message.tool_calls)) {
+                for (const tc of chunk.message.tool_calls) {
+                  currentBlockIndex++;
+                  const toolUseId = `toolu_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                  res.write(`event: content_block_start\ndata: ${JSON.stringify({
+                    type: 'content_block_start',
+                    index: currentBlockIndex,
+                    content_block: {
+                      type: 'tool_use',
+                      id: toolUseId,
+                      name: tc.function.name,
+                      input: tc.function.arguments || {}
+                    }
+                  })}\n\n`);
+
+                  res.write(`event: content_block_stop\ndata: ${JSON.stringify({
+                    type: 'content_block_stop',
+                    index: currentBlockIndex
+                  })}\n\n`);
+                }
               }
 
               if (chunk.done) {
@@ -222,6 +276,7 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
         model: ollamaModel,
         messages: ollamaMessages,
         stream: false,
+        ...(ollamaTools && { tools: ollamaTools }),
         options: {
           ...(temperature !== undefined && { temperature }),
           ...(top_p !== undefined && { top_p }),
@@ -248,6 +303,22 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
     const inputTokens = ollamaData.prompt_eval_count || 0;
     const outputTokens = ollamaData.eval_count || 0;
 
+    const contentBlocks = [];
+    if (ollamaData.message?.content) {
+      contentBlocks.push({ type: 'text', text: ollamaData.message.content });
+    }
+
+    if (ollamaData.message?.tool_calls && Array.isArray(ollamaData.message.tool_calls)) {
+      for (const tc of ollamaData.message.tool_calls) {
+        contentBlocks.push({
+          type: 'tool_use',
+          id: `toolu_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+          name: tc.function.name,
+          input: tc.function.arguments || {}
+        });
+      }
+    }
+
     // Log request
     logRequest({
       userId: req.user.id,
@@ -263,9 +334,7 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
       id: `msg_${Date.now()}`,
       type: 'message',
       role: 'assistant',
-      content: [
-        { type: 'text', text: ollamaData.message?.content || '' }
-      ],
+      content: contentBlocks,
       model: ollamaModel,
       stop_reason: 'end_turn',
       stop_sequence: null,
