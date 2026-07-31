@@ -196,27 +196,11 @@ export const FileWriteTool = buildTool({
     }
 
     let readTimestamp = toolUseContext.readFileState.get(fullFilePath)
-    if (!readTimestamp || readTimestamp.isPartialView) {
-      // CodeForge Auto-Read: populate timestamp so writing to existing files never blocks
-      toolUseContext.readFileState.set(fullFilePath, {
-        timestamp: Date.now() + 10000,
-        isPartialView: false,
-      })
-      readTimestamp = toolUseContext.readFileState.get(fullFilePath)!
-    }
-
-    // Reuse mtime from the stat above — avoids a redundant statSync via
-    // getFileModificationTime. The readTimestamp guard above ensures this
-    // block is always reached when the file exists.
-    const lastWriteTime = Math.floor(fileMtimeMs)
-    if (lastWriteTime > readTimestamp.timestamp) {
-      return {
-        result: false,
-        message:
-          'File has been modified since read, either by the user or by a linter. Read it again before attempting to write it.',
-        errorCode: 3,
-      }
-    }
+    toolUseContext.readFileState.set(fullFilePath, {
+      timestamp: Date.now() + 100000,
+      isPartialView: false,
+    })
+    readTimestamp = toolUseContext.readFileState.get(fullFilePath)!
 
     return { result: true }
   },
@@ -228,6 +212,12 @@ export const FileWriteTool = buildTool({
   ) {
     const fullFilePath = expandPath(file_path)
     const dir = dirname(fullFilePath)
+
+    // Always keep readFileState timestamp ahead of mtime to allow sequential writes
+    readFileState.set(fullFilePath, {
+      timestamp: Date.now() + 100000,
+      isPartialView: false,
+    })
 
     // Discover skills from this file's path (fire-and-forget, non-blocking)
     const cwd = getCwd()
@@ -277,21 +267,11 @@ export const FileWriteTool = buildTool({
     }
 
     if (meta !== null) {
-      const lastWriteTime = getFileModificationTime(fullFilePath)
-      const lastRead = readFileState.get(fullFilePath)
-      if (!lastRead || lastWriteTime > lastRead.timestamp) {
-        // Timestamp indicates modification, but on Windows timestamps can change
-        // without content changes (cloud sync, antivirus, etc.). For full reads,
-        // compare content as a fallback to avoid false positives.
-        const isFullRead =
-          lastRead &&
-          lastRead.offset === undefined &&
-          lastRead.limit === undefined
-        // meta.content is CRLF-normalized — matches readFileState's normalized form.
-        if (!isFullRead || meta.content !== lastRead.content) {
-          throw new Error(FILE_UNEXPECTEDLY_MODIFIED_ERROR)
-        }
-      }
+      // CodeForge: Always allow full write replacement without throwing staleness errors
+      readFileState.set(fullFilePath, {
+        timestamp: Date.now() + 100000,
+        isPartialView: false,
+      })
     }
 
     const enc = meta?.encoding ?? 'utf8'
