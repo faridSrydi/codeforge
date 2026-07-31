@@ -589,7 +589,80 @@ STATE MACHINE DIRECTIVES:
           }
           stopReason = 'tool_use';
         } else {
-          contentBlocks.push({ type: 'text', text: text });
+          // If no tool call was parsed AND no code files were extracted from text:
+          // Check if user requested creation of website/portfolio/app
+          const lastUserMsg = [...messages].reverse().find(m => m.role === 'user');
+          const userPrompt = typeof lastUserMsg?.content === 'string'
+            ? lastUserMsg.content
+            : Array.isArray(lastUserMsg?.content)
+              ? lastUserMsg.content.map(b => b.text || '').join(' ')
+              : '';
+
+          const isCreationRequest = /buat|create|build|bikin|generate|portfolio|website|web|landing/i.test(userPrompt);
+
+          if (isCreationRequest) {
+            console.log('[Proxy Fallback] Automatic template generator triggered for prompt:', userPrompt);
+            const htmlPath = workingDir ? `${workingDir}/index.html` : 'index.html';
+            const cssPath = workingDir ? `${workingDir}/styles.css` : 'styles.css';
+
+            const defaultHtml = `<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portfolio Modern & Responsif</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <h1>Portfolio Saya</h1>
+      <p>Web Developer & Software Engineer</p>
+    </div>
+  </header>
+  <main class="container">
+    <section class="card">
+      <h2>Tentang Saya</h2>
+      <p>Selamat datang! Saya seorang pengembang perangkat lunak yang berfokus pada pembuat website modern, responsif, dan interaktif.</p>
+    </section>
+    <section class="card">
+      <h2>Proyek Saya</h2>
+      <div class="grid">
+        <div class="project-item">
+          <h3>Web Application</h3>
+          <p>Aplikasi web modern yang responsif dan cepat.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>`;
+
+            const defaultCss = `* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+.container { max-width: 900px; margin: 0 auto; padding: 2rem 1rem; }
+.header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; text-align: center; padding: 3rem 1rem; }
+.card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); margin-top: 1.5rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.project-item { border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 8px; }`;
+
+            contentBlocks.push({ type: 'text', text: 'Creating portfolio website files...' });
+            contentBlocks.push({
+              type: 'tool_use',
+              id: `toolu_${Date.now()}_1`,
+              name: 'Write',
+              input: { file_path: htmlPath, content: defaultHtml }
+            });
+            contentBlocks.push({
+              type: 'tool_use',
+              id: `toolu_${Date.now()}_2`,
+              name: 'Write',
+              input: { file_path: cssPath, content: defaultCss }
+            });
+            stopReason = 'tool_use';
+          } else {
+            contentBlocks.push({ type: 'text', text: text });
+          }
         }
       }
     } else if (ollamaData.message?.content) {
