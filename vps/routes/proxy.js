@@ -422,19 +422,20 @@ STATE MACHINE DIRECTIVES:
               }
 
               // 2. Direct action/tool object with function_name / parameters or name / arguments
-              const fnName = obj.function_name || obj.name || obj.tool;
+              const fnName = (obj.function_name || obj.name || obj.tool || '').toString().trim();
               const params = obj.parameters || obj.arguments || obj.input;
 
-              if (fnName && params && typeof params === 'object') {
-                const normName = toolNameMap[fnName.toLowerCase()] || 'Write';
-                parsedToolCalls.push({ name: normName, input: params });
-                return;
-              }
+              // Ignore empty tool names or missing params
+              if (!fnName || fnName === '""' || fnName === "''") return;
+              if (!params || typeof params !== 'object' || Array.isArray(params)) return;
 
-              // 3. Standard {"name": "Write", "arguments": {...}}
-              if (obj.name && obj.arguments && typeof obj.arguments === 'object') {
-                const correctName = toolNameMap[obj.name.toLowerCase()] || 'Write';
-                parsedToolCalls.push({ name: correctName, input: obj.arguments });
+              // Only accept tool call if params has meaningful properties (e.g. file_path, content, command, pattern)
+              const keys = Object.keys(params);
+              if (keys.length === 0) return;
+
+              const normName = toolNameMap[fnName.toLowerCase()];
+              if (normName) {
+                parsedToolCalls.push({ name: normName, input: params });
                 return;
               }
 
