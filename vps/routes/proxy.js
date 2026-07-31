@@ -51,15 +51,20 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
     // Convert Anthropic tools → Ollama format
     const rawTools = Array.isArray(tools) && tools.length > 0 ? tools : [];
 
-    // Map all provided tools cleanly to Ollama format
-    let ollamaTools = rawTools.map(t => ({
-      type: 'function',
-      function: {
-        name: t.name,
-        description: t.description || '',
-        parameters: t.input_schema || { type: 'object', properties: {} }
-      }
-    }));
+    // Filter out meta-tools (like Skill, Agent) that cause local LLMs to get stuck in loops
+    const FORBIDDEN_META_TOOLS = new Set(['skill', 'agent', 'toolsearch', 'discoverskills', 'brief']);
+
+    // Map provided code execution tools cleanly to Ollama format
+    let ollamaTools = rawTools
+      .filter(t => !FORBIDDEN_META_TOOLS.has(t.name.toLowerCase()))
+      .map(t => ({
+        type: 'function',
+        function: {
+          name: t.name,
+          description: t.description || '',
+          parameters: t.input_schema || { type: 'object', properties: {} }
+        }
+      }));
 
     // If no tools were passed, provide standard default tools so AI is ALWAYS an agent
     if (ollamaTools.length === 0) {
@@ -404,6 +409,10 @@ STATE MACHINE DIRECTIVES:
             const parsed = JSON.parse(jsonStr);
 
             const tryAdd = (obj) => {
+              if (obj.skill || (obj.name && (obj.name.toLowerCase() === 'skill' || obj.name.toLowerCase() === 'agent'))) {
+                console.log('[Proxy Fallback] Ignored meta tool call:', obj.skill || obj.name);
+                return;
+              }
               if (obj.name && obj.arguments) {
                 const correctName = toolNameMap[obj.name.toLowerCase()];
                 if (correctName) {
