@@ -311,9 +311,7 @@ export async function getAnthropicClient({
       : undefined,
     ...(vpsCreds && vpsCreds.serverUrl
       ? {
-          baseURL: vpsCreds.serverUrl.replace(/\/+$/, '').endsWith('/v1')
-            ? vpsCreds.serverUrl.replace(/\/+$/, '')
-            : `${vpsCreds.serverUrl.replace(/\/+$/, '')}/v1`,
+          baseURL: vpsCreds.serverUrl.replace(/\/+$/, '').replace(/\/v1$/, ''),
         }
       : process.env.USER_TYPE === 'ant' &&
         isEnvTruthy(process.env.USE_STAGING_OAUTH)

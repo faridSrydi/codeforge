@@ -10,7 +10,7 @@ const DEFAULT_MODEL = process.env.DEFAULT_MODEL || 'qwen2.5-coder:14b';
  * POST /v1/messages, /v1/beta/messages
  * Anthropic-compatible Messages API proxy → Ollama
  */
-router.post(['/messages', '/beta/messages', '/'], async (req, res) => {
+router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, res) => {
   const startTime = Date.now();
 
   try {
