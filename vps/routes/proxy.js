@@ -66,7 +66,7 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
     const ollamaMessages = [];
 
     // Add system prompt if provided
-    let systemText = typeof system === 'string'
+    let originalSystem = typeof system === 'string'
       ? system
       : Array.isArray(system)
         ? system.map(b => b.text || '').join('\n')
@@ -74,13 +74,24 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
 
     const availableToolNames = ollamaTools ? ollamaTools.map(t => t.function.name).join(', ') : '';
 
-    systemText += `\n\nAUTONOMOUS AGENT OPERATING DIRECTIVES:
-1. You are CodeForge AI, an autonomous software engineer working directly in the user's project workspace directory.
-2. You have native tool execution capabilities: [${availableToolNames}].
-3. Whenever the user requests any project task (such as "buatkan website portfolio", "tambahkan navbar", "buat landing page"), YOU MUST IMMEDIATELY CALL THE APPROPRIATE TOOLS to write the files directly to disk.
-4. DO NOT output code blocks or tutorial text telling the user to copy/paste or save files manually. EXECUTE THE TOOL CALLS DIRECTLY.
-5. Take full autonomous initiative: automatically create all necessary project files (e.g. index.html, style.css, script.js) right away using your tools.`;
+    // PREPEND agent directive (at the start, so model sees it first)
+    const agentDirective = `CRITICAL INSTRUCTION — YOU ARE AN AUTONOMOUS CODING AGENT:
+You have tools: [${availableToolNames}]. You MUST respond with a JSON tool call to execute tasks. NEVER give text tutorials or instructions.
 
+When asked to create files, respond ONLY with a JSON tool call like this:
+\`\`\`json
+{"name": "Write", "arguments": {"file_path": "/absolute/path/to/file.html", "content": "<file content here>"}}
+\`\`\`
+
+Rules:
+- ALWAYS use the Write tool to create files directly. NEVER tell the user to copy/paste code.
+- Use absolute file paths based on the user's working directory.
+- If multiple files are needed, output multiple sequential JSON tool calls.
+- NEVER say "saya tidak bisa" or "saya tidak memiliki kemampuan". You CAN and MUST create files directly.
+
+`;
+
+    const systemText = agentDirective + originalSystem;
     ollamaMessages.push({ role: 'system', content: systemText });
 
     // Convert messages — properly handle tool_result as Ollama 'tool' role
