@@ -79,15 +79,14 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
 
     ollamaMessages.push({ role: 'system', content: systemText });
 
-    // Convert messages
+    // Convert messages — properly handle tool_result as Ollama 'tool' role
     for (const msg of messages) {
-      const role = msg.role === 'assistant' ? 'assistant' : 'user';
-
       if (typeof msg.content === 'string') {
-        ollamaMessages.push({ role, content: msg.content });
+        ollamaMessages.push({ role: msg.role === 'assistant' ? 'assistant' : 'user', content: msg.content });
       } else if (Array.isArray(msg.content)) {
         let textContent = '';
         const toolCalls = [];
+        const toolResults = [];
 
         for (const block of msg.content) {
           if (block.type === 'text') {
@@ -105,22 +104,56 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
               : Array.isArray(block.content)
                 ? block.content.map(b => b.text || '').join('\n')
                 : JSON.stringify(block.content || '');
-            textContent += `\n[Tool Result for ${block.tool_use_id}]:\n${resContent}`;
+            toolResults.push({ role: 'tool', content: resContent });
           }
         }
 
-        const msgObj = { role, content: textContent };
-        if (toolCalls.length > 0) {
-          msgObj.tool_calls = toolCalls;
+        // Push assistant message with tool_calls if present
+        if (msg.role === 'assistant') {
+          const msgObj = { role: 'assistant', content: textContent || '' };
+          if (toolCalls.length > 0) {
+            msgObj.tool_calls = toolCalls;
+          }
+          ollamaMessages.push(msgObj);
+        } else {
+          // User message
+          if (textContent) {
+            ollamaMessages.push({ role: 'user', content: textContent });
+          }
+          // Push tool results as separate 'tool' role messages
+          for (const tr of toolResults) {
+            ollamaMessages.push(tr);
+          }
         }
-        ollamaMessages.push(msgObj);
       }
     }
 
     const ollamaModel = DEFAULT_MODEL;
+    const hasTools = ollamaTools && ollamaTools.length > 0;
 
-    // ── Streaming mode ──
-    if (stream) {
+    // ── Build Ollama request body ──
+    const ollamaRequestBody = {
+      model: ollamaModel,
+      messages: ollamaMessages,
+      // CRITICAL: Force stream:false when tools are present!
+      // Ollama/Qwen2.5-Coder does NOT reliably return tool_calls in streaming mode.
+      stream: hasTools ? false : !!stream,
+      ...(hasTools && { tools: ollamaTools }),
+      options: {
+        ...(temperature !== undefined && { temperature }),
+        ...(top_p !== undefined && { top_p }),
+        ...(max_tokens && { num_predict: max_tokens }),
+        ...(stop_sequences && { stop: stop_sequences })
+      }
+    };
+
+    console.log('[Proxy Debug] hasTools:', hasTools, '| toolCount:', ollamaTools?.length || 0, '| stream:', ollamaRequestBody.stream);
+    if (hasTools) {
+      console.log('[Proxy Debug] Tool names:', ollamaTools.map(t => t.function.name).join(', '));
+    }
+
+    // ── Streaming mode (only when NO tools, otherwise force non-streaming below) ──
+    if (stream && !hasTools) {
       res.setHeader('Content-Type', 'text/event-stream');
       res.setHeader('Cache-Control', 'no-cache');
       res.setHeader('Connection', 'keep-alive');
@@ -149,18 +182,7 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
         const ollamaRes = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: ollamaModel,
-            messages: ollamaMessages,
-            stream: true,
-            ...(ollamaTools && { tools: ollamaTools }),
-            options: {
-              ...(temperature !== undefined && { temperature }),
-              ...(top_p !== undefined && { top_p }),
-              ...(max_tokens && { num_predict: max_tokens }),
-              ...(stop_sequences && { stop: stop_sequences })
-            }
-          })
+          body: JSON.stringify(ollamaRequestBody)
         });
 
         if (!ollamaRes.ok) {
@@ -179,7 +201,6 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
         let totalOutputTokens = 0;
         let totalInputTokens = 0;
         let buffer = '';
-        let currentBlockIndex = 0;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -193,103 +214,46 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
             if (!line.trim()) continue;
             try {
               const chunk = JSON.parse(line);
-
-              // Standard text content
               if (chunk.message?.content) {
                 res.write(`event: content_block_delta\ndata: ${JSON.stringify({
                   type: 'content_block_delta',
-                  index: currentBlockIndex,
+                  index: 0,
                   delta: { type: 'text_delta', text: chunk.message.content }
                 })}\n\n`);
               }
-
-              // Tool calls from model
-              if (chunk.message?.tool_calls && Array.isArray(chunk.message.tool_calls)) {
-                for (const tc of chunk.message.tool_calls) {
-                  currentBlockIndex++;
-                  const toolUseId = `toolu_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-                  res.write(`event: content_block_start\ndata: ${JSON.stringify({
-                    type: 'content_block_start',
-                    index: currentBlockIndex,
-                    content_block: {
-                      type: 'tool_use',
-                      id: toolUseId,
-                      name: tc.function.name,
-                      input: tc.function.arguments || {}
-                    }
-                  })}\n\n`);
-
-                  res.write(`event: content_block_stop\ndata: ${JSON.stringify({
-                    type: 'content_block_stop',
-                    index: currentBlockIndex
-                  })}\n\n`);
-                }
-              }
-
               if (chunk.done) {
                 totalOutputTokens = chunk.eval_count || 0;
                 totalInputTokens = chunk.prompt_eval_count || 0;
               }
-            } catch (e) {
-              // Skip malformed JSON lines
-            }
+            } catch (e) { /* skip */ }
           }
         }
 
-        // Send content_block_stop
         res.write(`event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: 0 })}\n\n`);
-
-        // Send message_delta with stop reason
         res.write(`event: message_delta\ndata: ${JSON.stringify({
           type: 'message_delta',
           delta: { stop_reason: 'end_turn', stop_sequence: null },
           usage: { output_tokens: totalOutputTokens }
         })}\n\n`);
-
-        // Send message_stop
         res.write(`event: message_stop\ndata: ${JSON.stringify({ type: 'message_stop' })}\n\n`);
-
         res.end();
 
-        // Log request
-        logRequest({
-          userId: req.user.id,
-          model: ollamaModel,
-          inputTokens: totalInputTokens,
-          outputTokens: totalOutputTokens,
-          durationMs: Date.now() - startTime,
-          status: 'success'
-        });
-
+        logRequest({ userId: req.user.id, model: ollamaModel, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, durationMs: Date.now() - startTime, status: 'success' });
       } catch (fetchErr) {
-        res.write(`event: error\ndata: ${JSON.stringify({
-          type: 'error',
-          error: { type: 'api_error', message: `Failed to connect to AI model: ${fetchErr.message}` }
-        })}\n\n`);
+        res.write(`event: error\ndata: ${JSON.stringify({ type: 'error', error: { type: 'api_error', message: `Failed to connect to AI model: ${fetchErr.message}` } })}\n\n`);
         res.end();
-
         logRequest({ userId: req.user.id, model: ollamaModel, durationMs: Date.now() - startTime, status: 'error' });
       }
-
       return;
     }
 
-    // ── Non-streaming mode ──
+    // ── Non-streaming mode (also used when tools are present + stream was requested) ──
+    const simulateStream = stream && hasTools; // CLI asked for stream but we forced non-stream for tools
+
     const ollamaRes = await fetch(`${OLLAMA_BASE_URL}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: ollamaModel,
-        messages: ollamaMessages,
-        stream: false,
-        ...(ollamaTools && { tools: ollamaTools }),
-        options: {
-          ...(temperature !== undefined && { temperature }),
-          ...(top_p !== undefined && { top_p }),
-          ...(max_tokens && { num_predict: max_tokens }),
-          ...(stop_sequences && { stop: stop_sequences })
-        }
-      })
+      body: JSON.stringify(ollamaRequestBody)
     });
 
     if (!ollamaRes.ok) {
@@ -299,20 +263,32 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
         ? `AI Model "${ollamaModel}" is currently downloading/loading on VPS. Please wait a moment or run on VPS: docker exec -d codeforge-ollama ollama pull ${ollamaModel}`
         : `AI model error: ${errorText}`;
       logRequest({ userId: req.user.id, model: ollamaModel, durationMs: Date.now() - startTime, status: 'error' });
-      return res.status(400).json({
-        type: 'error',
-        error: { type: 'api_error', message: errorMsg }
-      });
+
+      if (simulateStream) {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.write(`event: error\ndata: ${JSON.stringify({ type: 'error', error: { type: 'api_error', message: errorMsg } })}\n\n`);
+        res.end();
+      } else {
+        res.status(400).json({ type: 'error', error: { type: 'api_error', message: errorMsg } });
+      }
+      return;
     }
 
     const ollamaData = await ollamaRes.json();
     const inputTokens = ollamaData.prompt_eval_count || 0;
     const outputTokens = ollamaData.eval_count || 0;
 
+    console.log('[Proxy Debug] Ollama response keys:', Object.keys(ollamaData));
+    console.log('[Proxy Debug] message.content length:', ollamaData.message?.content?.length || 0);
+    console.log('[Proxy Debug] message.tool_calls:', JSON.stringify(ollamaData.message?.tool_calls || 'none'));
+
     const contentBlocks = [];
     if (ollamaData.message?.content) {
       contentBlocks.push({ type: 'text', text: ollamaData.message.content });
     }
+
+    // Determine stop_reason based on whether tool_calls are present
+    let stopReason = 'end_turn';
 
     if (ollamaData.message?.tool_calls && Array.isArray(ollamaData.message.tool_calls)) {
       for (const tc of ollamaData.message.tool_calls) {
@@ -323,31 +299,85 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
           input: tc.function.arguments || {}
         });
       }
+      if (ollamaData.message.tool_calls.length > 0) {
+        stopReason = 'tool_use';
+      }
     }
 
-    // Log request
-    logRequest({
-      userId: req.user.id,
-      model: ollamaModel,
-      inputTokens,
-      outputTokens,
-      durationMs: Date.now() - startTime,
-      status: 'success'
-    });
+    logRequest({ userId: req.user.id, model: ollamaModel, inputTokens, outputTokens, durationMs: Date.now() - startTime, status: 'success' });
 
-    // ── Return Anthropic-compatible response ──
+    // If CLI requested stream but we forced non-stream, simulate SSE from the complete response
+    if (simulateStream) {
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+
+      const messageId = `msg_${Date.now()}`;
+      res.write(`event: message_start\ndata: ${JSON.stringify({
+        type: 'message_start',
+        message: { id: messageId, type: 'message', role: 'assistant', content: [], model: ollamaModel, stop_reason: null, usage: { input_tokens: inputTokens, output_tokens: 0 } }
+      })}\n\n`);
+
+      let blockIndex = 0;
+
+      // Emit text content block
+      if (ollamaData.message?.content) {
+        res.write(`event: content_block_start\ndata: ${JSON.stringify({ type: 'content_block_start', index: blockIndex, content_block: { type: 'text', text: '' } })}\n\n`);
+
+        // Stream text in chunks for natural feel
+        const fullText = ollamaData.message.content;
+        const chunkSize = 20;
+        for (let i = 0; i < fullText.length; i += chunkSize) {
+          const textChunk = fullText.substring(i, i + chunkSize);
+          res.write(`event: content_block_delta\ndata: ${JSON.stringify({ type: 'content_block_delta', index: blockIndex, delta: { type: 'text_delta', text: textChunk } })}\n\n`);
+        }
+        res.write(`event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: blockIndex })}\n\n`);
+        blockIndex++;
+      }
+
+      // Emit tool_use blocks
+      if (ollamaData.message?.tool_calls && Array.isArray(ollamaData.message.tool_calls)) {
+        for (const tc of ollamaData.message.tool_calls) {
+          const toolUseId = `toolu_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+          res.write(`event: content_block_start\ndata: ${JSON.stringify({
+            type: 'content_block_start',
+            index: blockIndex,
+            content_block: { type: 'tool_use', id: toolUseId, name: tc.function.name, input: {} }
+          })}\n\n`);
+
+          // Send input as input_json_delta
+          const inputStr = JSON.stringify(tc.function.arguments || {});
+          res.write(`event: content_block_delta\ndata: ${JSON.stringify({
+            type: 'content_block_delta',
+            index: blockIndex,
+            delta: { type: 'input_json_delta', partial_json: inputStr }
+          })}\n\n`);
+
+          res.write(`event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: blockIndex })}\n\n`);
+          blockIndex++;
+        }
+      }
+
+      res.write(`event: message_delta\ndata: ${JSON.stringify({
+        type: 'message_delta',
+        delta: { stop_reason: stopReason, stop_sequence: null },
+        usage: { output_tokens: outputTokens }
+      })}\n\n`);
+      res.write(`event: message_stop\ndata: ${JSON.stringify({ type: 'message_stop' })}\n\n`);
+      res.end();
+      return;
+    }
+
+    // ── Return Anthropic-compatible JSON response (true non-stream) ──
     res.json({
       id: `msg_${Date.now()}`,
       type: 'message',
       role: 'assistant',
       content: contentBlocks,
       model: ollamaModel,
-      stop_reason: 'end_turn',
+      stop_reason: stopReason,
       stop_sequence: null,
-      usage: {
-        input_tokens: inputTokens,
-        output_tokens: outputTokens
-      }
+      usage: { input_tokens: inputTokens, output_tokens: outputTokens }
     });
 
   } catch (err) {
