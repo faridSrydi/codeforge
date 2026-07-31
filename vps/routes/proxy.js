@@ -283,14 +283,16 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
     console.log('[Proxy Debug] message.tool_calls:', JSON.stringify(ollamaData.message?.tool_calls || 'none'));
 
     const contentBlocks = [];
-    if (ollamaData.message?.content) {
-      contentBlocks.push({ type: 'text', text: ollamaData.message.content });
-    }
-
-    // Determine stop_reason based on whether tool_calls are present
     let stopReason = 'end_turn';
 
-    if (ollamaData.message?.tool_calls && Array.isArray(ollamaData.message.tool_calls)) {
+    // Check if Ollama returned native tool_calls
+    const hasNativeToolCalls = ollamaData.message?.tool_calls && Array.isArray(ollamaData.message.tool_calls) && ollamaData.message.tool_calls.length > 0;
+
+    if (hasNativeToolCalls) {
+      // Model natively called tools — forward them directly
+      if (ollamaData.message.content) {
+        contentBlocks.push({ type: 'text', text: ollamaData.message.content });
+      }
       for (const tc of ollamaData.message.tool_calls) {
         contentBlocks.push({
           type: 'tool_use',
@@ -299,9 +301,92 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
           input: tc.function.arguments || {}
         });
       }
-      if (ollamaData.message.tool_calls.length > 0) {
-        stopReason = 'tool_use';
+      stopReason = 'tool_use';
+      console.log('[Proxy Debug] Native tool calls detected:', ollamaData.message.tool_calls.length);
+    } else if (hasTools && ollamaData.message?.content) {
+      // ── FALLBACK PARSER ──
+      // Model generated text instead of calling tools.
+      // Parse code blocks from the text and convert them into Write tool_use calls.
+      const text = ollamaData.message.content;
+      const codeBlockRegex = /(?:(?:^|\n)(?:#{1,4}\s+)?(?:\*{0,2})?(?:`)?([a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+)(?:`)?(?:\*{0,2})?(?:\s*[:：]?)?\s*\n+)?```[\w]*\n([\s\S]*?)```/g;
+      const fileExtRegex = /\b([a-zA-Z0-9_\-]+\.(html|css|js|jsx|ts|tsx|py|json|md|txt|yaml|yml|xml|php|rb|go|rs|java|c|cpp|h|hpp|sh|bat|ps1|sql|vue|svelte|astro))\b/i;
+      
+      const extractedFiles = [];
+      let match;
+      
+      while ((match = codeBlockRegex.exec(text)) !== null) {
+        let fileName = match[1];
+        const codeContent = match[2];
+        
+        if (!codeContent || codeContent.trim().length === 0) continue;
+        
+        // If no filename was captured from the line before, search the surrounding text
+        if (!fileName || !fileExtRegex.test(fileName)) {
+          // Search backwards from the code block position for a filename
+          const textBefore = text.substring(Math.max(0, match.index - 200), match.index);
+          const fileMatch = textBefore.match(/(?:file|nama|name|buat|create|save|simpan|tulis|write)?[:\s]*(?:`)?([a-zA-Z0-9_\-\/]+\.(html|css|js|jsx|ts|tsx|py|json|txt|yaml|yml|xml|php|vue|svelte))(?:`)?/i);
+          if (fileMatch) {
+            fileName = fileMatch[1];
+          }
+        }
+        
+        // Detect file type from code block language tag if still no filename
+        if (!fileName || !fileExtRegex.test(fileName)) {
+          const langMatch = text.substring(match.index).match(/```(\w+)/);
+          const langMap = { html: 'index.html', css: 'style.css', javascript: 'script.js', js: 'script.js', python: 'main.py', typescript: 'index.ts', json: 'data.json', php: 'index.php' };
+          if (langMatch && langMap[langMatch[1].toLowerCase()]) {
+            fileName = langMap[langMatch[1].toLowerCase()];
+            // Avoid duplicate default names
+            const existing = extractedFiles.find(f => f.name === fileName);
+            if (existing) {
+              const count = extractedFiles.filter(f => f.name.startsWith(langMatch[1])).length;
+              const ext = fileName.split('.').pop();
+              const base = fileName.replace(`.${ext}`, '');
+              fileName = `${base}${count + 1}.${ext}`;
+            }
+          }
+        }
+        
+        if (fileName && codeContent.trim().length > 10) {
+          extractedFiles.push({ name: fileName.replace(/^\/+/, ''), content: codeContent.trimEnd() });
+        }
       }
+      
+      console.log('[Proxy Debug] FALLBACK PARSER: extracted', extractedFiles.length, 'files:', extractedFiles.map(f => f.name).join(', '));
+      
+      if (extractedFiles.length > 0) {
+        // Get working directory from the original messages (look for cwd info in system prompt)
+        let workingDir = '';
+        const cwdMatch = systemText.match(/working directory[:\s]+([^\n]+)/i) || systemText.match(/cwd[:\s]+([^\n]+)/i) || systemText.match(/(?:Current working directory|Working Dir)[:\s]+([^\n]+)/i);
+        if (cwdMatch) {
+          workingDir = cwdMatch[1].trim().replace(/\\/g, '/');
+          if (!workingDir.endsWith('/')) workingDir += '/';
+        }
+        
+        // Add brief description text
+        const fileNames = extractedFiles.map(f => f.name).join(', ');
+        contentBlocks.push({ type: 'text', text: `I'll create the following files for you: ${fileNames}` });
+        
+        // Generate Write tool_use blocks for each file
+        for (const file of extractedFiles) {
+          const filePath = workingDir ? `${workingDir}${file.name}` : file.name;
+          contentBlocks.push({
+            type: 'tool_use',
+            id: `toolu_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            name: 'Write',
+            input: {
+              file_path: filePath,
+              content: file.content
+            }
+          });
+        }
+        stopReason = 'tool_use';
+      } else {
+        // No files extracted, just forward the text as-is
+        contentBlocks.push({ type: 'text', text: text });
+      }
+    } else if (ollamaData.message?.content) {
+      contentBlocks.push({ type: 'text', text: ollamaData.message.content });
     }
 
     logRequest({ userId: req.user.id, model: ollamaModel, inputTokens, outputTokens, durationMs: Date.now() - startTime, status: 'success' });
