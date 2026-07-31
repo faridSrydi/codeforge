@@ -305,102 +305,141 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
       console.log('[Proxy] Native tool calls detected:', ollamaData.message.tool_calls.length);
     } else if (hasTools && ollamaData.message?.content) {
       // ── FALLBACK PARSER ──
-      // Model generated text instead of calling tools.
-      // Parse code blocks from text and convert them into Write tool_use calls.
+      // Qwen2.5-Coder outputs tool calls as JSON TEXT instead of native tool_calls.
+      // Example: ```json\n{"name":"Write","arguments":{"file_path":"...","content":"..."}}\n```
       const text = ollamaData.message.content;
       console.log('[Proxy Fallback] Raw response first 500 chars:', text.substring(0, 500));
 
-      // STEP 1: Find all fenced code blocks with simple regex
-      const codeBlocks = [];
-      const fencedRegex = /```(\w*)\n([\s\S]*?)```/g;
-      let m;
-      while ((m = fencedRegex.exec(text)) !== null) {
-        if (m[2] && m[2].trim().length > 10) {
-          codeBlocks.push({ lang: m[1] || '', code: m[2], pos: m.index });
+      const knownTools = new Set(['Agent', 'Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'ToolSearch', 'Write']);
+      let parsedToolCalls = [];
+
+      // STRATEGY 1: Parse JSON tool calls from text
+      // Try to find JSON objects with "name" and "arguments" fields
+      try {
+        // Extract JSON from fenced code blocks first
+        const jsonBlocks = [];
+        const jsonFenceRegex = /```(?:json)?\s*\n([\s\S]*?)```/g;
+        let jm;
+        while ((jm = jsonFenceRegex.exec(text)) !== null) {
+          jsonBlocks.push(jm[1].trim());
         }
-      }
 
-      console.log('[Proxy Fallback] Found', codeBlocks.length, 'fenced code blocks');
+        // Also try the entire text as raw JSON (no fencing)
+        const trimmed = text.trim();
+        if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+          jsonBlocks.push(trimmed);
+        }
 
-      // STEP 2: For each code block, find the filename from surrounding text
-      const fileExtPattern = /([a-zA-Z0-9_\-\/]+\.(html|css|js|jsx|ts|tsx|py|json|txt|yaml|yml|xml|php|vue|svelte|sh|bat))/gi;
-      const langToDefault = { html: 'index.html', css: 'styles.css', javascript: 'script.js', js: 'script.js', python: 'main.py', typescript: 'index.ts', json: 'data.json', php: 'index.php', sh: 'script.sh', bat: 'script.bat' };
-      const usedNames = new Set();
+        for (const jsonStr of jsonBlocks) {
+          try {
+            const parsed = JSON.parse(jsonStr);
 
-      const extractedFiles = [];
-
-      for (const block of codeBlocks) {
-        let fileName = null;
-
-        // Search the 400 characters before the code block for a filename
-        const searchStart = Math.max(0, block.pos - 400);
-        const textBefore = text.substring(searchStart, block.pos);
-
-        // Find ALL filename matches in the text before, take the LAST one (closest to code block)
-        const allMatches = [...textBefore.matchAll(fileExtPattern)];
-        if (allMatches.length > 0) {
-          fileName = allMatches[allMatches.length - 1][1];
-          // Clean up path — just keep the basename
-          if (fileName.includes('/')) {
-            fileName = fileName.split('/').pop();
+            // Single tool call object: {"name":"Write","arguments":{...}}
+            if (parsed.name && knownTools.has(parsed.name) && parsed.arguments) {
+              parsedToolCalls.push({ name: parsed.name, input: parsed.arguments });
+            }
+            // Array of tool calls: [{"name":"Write",...}, {"name":"Write",...}]
+            else if (Array.isArray(parsed)) {
+              for (const item of parsed) {
+                if (item.name && knownTools.has(item.name) && item.arguments) {
+                  parsedToolCalls.push({ name: item.name, input: item.arguments });
+                }
+              }
+            }
+          } catch (e) {
+            // Not valid JSON, skip
           }
         }
-
-        // Fallback: use language tag to determine default filename
-        if (!fileName && block.lang && langToDefault[block.lang.toLowerCase()]) {
-          fileName = langToDefault[block.lang.toLowerCase()];
-        }
-
-        // Fallback: detect from content
-        if (!fileName) {
-          if (block.code.includes('<!DOCTYPE') || block.code.includes('<html')) fileName = 'index.html';
-          else if (block.code.match(/^[\s\S]*\{[\s\S]*\}/) && block.code.includes(':')) fileName = 'styles.css';
-          else if (block.code.includes('document.') || block.code.includes('function ') || block.code.includes('const ') || block.code.includes('addEventListener')) fileName = 'script.js';
-        }
-
-        // Deduplicate names
-        if (fileName && usedNames.has(fileName)) {
-          const ext = fileName.split('.').pop();
-          const base = fileName.replace(`.${ext}`, '');
-          let counter = 2;
-          while (usedNames.has(`${base}${counter}.${ext}`)) counter++;
-          fileName = `${base}${counter}.${ext}`;
-        }
-
-        if (fileName) {
-          usedNames.add(fileName);
-          extractedFiles.push({ name: fileName, content: block.code.trimEnd() });
-        }
+      } catch (e) {
+        console.log('[Proxy Fallback] JSON parsing error:', e.message);
       }
 
-      console.log('[Proxy Fallback] Extracted files:', extractedFiles.length, extractedFiles.map(f => f.name).join(', '));
+      console.log('[Proxy Fallback] Parsed JSON tool calls:', parsedToolCalls.length);
 
-      if (extractedFiles.length > 0) {
-        // Get working directory from system prompt
-        let workingDir = '';
-        const cwdMatch = systemText.match(/(?:working directory|cwd|Working Dir|project workspace)[:\s]+([^\n,]+)/i);
-        if (cwdMatch) {
-          workingDir = cwdMatch[1].trim().replace(/\\/g, '/').replace(/\/+$/, '') + '/';
-        }
+      if (parsedToolCalls.length > 0) {
+        // Successfully parsed tool calls from text!
+        contentBlocks.push({ type: 'text', text: `Executing ${parsedToolCalls.length} tool call(s)...` });
 
-        // Brief description
-        const fileNames = extractedFiles.map(f => f.name).join(', ');
-        contentBlocks.push({ type: 'text', text: `Creating files: ${fileNames}` });
-
-        // Generate Write tool_use blocks
-        for (const file of extractedFiles) {
-          const filePath = workingDir ? `${workingDir}${file.name}` : file.name;
+        for (const tc of parsedToolCalls) {
           contentBlocks.push({
             type: 'tool_use',
             id: `toolu_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-            name: 'Write',
-            input: { file_path: filePath, content: file.content }
+            name: tc.name,
+            input: tc.input
           });
         }
         stopReason = 'tool_use';
       } else {
-        // No files extracted — forward text as-is
-        contentBlocks.push({ type: 'text', text: text });
+        // STRATEGY 2: Extract code blocks as files (original fallback)
+        const codeBlocks = [];
+        const fencedRegex = /```(\w*)\n([\s\S]*?)```/g;
+        let m;
+        while ((m = fencedRegex.exec(text)) !== null) {
+          if (m[2] && m[2].trim().length > 10) {
+            codeBlocks.push({ lang: m[1] || '', code: m[2], pos: m.index });
+          }
+        }
+
+        console.log('[Proxy Fallback] Found', codeBlocks.length, 'fenced code blocks');
+
+        const fileExtPattern = /([a-zA-Z0-9_\-\/]+\.(html|css|js|jsx|ts|tsx|py|json|txt|yaml|yml|xml|php|vue|svelte|sh|bat))/gi;
+        const langToDefault = { html: 'index.html', css: 'styles.css', javascript: 'script.js', js: 'script.js', python: 'main.py', typescript: 'index.ts', php: 'index.php' };
+        const usedNames = new Set();
+        const extractedFiles = [];
+
+        for (const block of codeBlocks) {
+          let fileName = null;
+          const searchStart = Math.max(0, block.pos - 400);
+          const textBefore = text.substring(searchStart, block.pos);
+          const allMatches = [...textBefore.matchAll(fileExtPattern)];
+          if (allMatches.length > 0) {
+            fileName = allMatches[allMatches.length - 1][1];
+            if (fileName.includes('/')) fileName = fileName.split('/').pop();
+          }
+          if (!fileName && block.lang && langToDefault[block.lang.toLowerCase()]) {
+            fileName = langToDefault[block.lang.toLowerCase()];
+          }
+          if (!fileName) {
+            if (block.code.includes('<!DOCTYPE') || block.code.includes('<html')) fileName = 'index.html';
+            else if (block.code.match(/[\w-]+\s*\{[^}]*:/) && !block.code.includes('function')) fileName = 'styles.css';
+            else if (block.code.includes('document.') || block.code.includes('addEventListener')) fileName = 'script.js';
+          }
+          if (fileName && usedNames.has(fileName)) {
+            const ext = fileName.split('.').pop();
+            const base = fileName.replace(`.${ext}`, '');
+            let counter = 2;
+            while (usedNames.has(`${base}${counter}.${ext}`)) counter++;
+            fileName = `${base}${counter}.${ext}`;
+          }
+          if (fileName) {
+            usedNames.add(fileName);
+            extractedFiles.push({ name: fileName, content: block.code.trimEnd() });
+          }
+        }
+
+        console.log('[Proxy Fallback] Extracted files:', extractedFiles.length, extractedFiles.map(f => f.name).join(', '));
+
+        if (extractedFiles.length > 0) {
+          let workingDir = '';
+          const cwdMatch = systemText.match(/(?:working directory|cwd|Working Dir|project workspace)[:\s]+([^\n,]+)/i);
+          if (cwdMatch) workingDir = cwdMatch[1].trim().replace(/\\/g, '/').replace(/\/+$/, '') + '/';
+
+          const fileNames = extractedFiles.map(f => f.name).join(', ');
+          contentBlocks.push({ type: 'text', text: `Creating files: ${fileNames}` });
+
+          for (const file of extractedFiles) {
+            const filePath = workingDir ? `${workingDir}${file.name}` : file.name;
+            contentBlocks.push({
+              type: 'tool_use',
+              id: `toolu_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+              name: 'Write',
+              input: { file_path: filePath, content: file.content }
+            });
+          }
+          stopReason = 'tool_use';
+        } else {
+          contentBlocks.push({ type: 'text', text: text });
+        }
       }
     } else if (ollamaData.message?.content) {
       contentBlocks.push({ type: 'text', text: ollamaData.message.content });
