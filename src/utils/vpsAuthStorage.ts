@@ -82,8 +82,8 @@ export function getVPSAuthHeader(): string | null {
 export function getVPSBaseUrl(): string {
   const creds = getVPSCredentials();
   if (creds && creds.serverUrl) {
-    // Ensure no trailing slash
-    return creds.serverUrl.replace(/\/+$/, '');
+    const cleanUrl = creds.serverUrl.replace(/\/+$/, '');
+    return cleanUrl.endsWith('/v1') ? cleanUrl : `${cleanUrl}/v1`;
   }
-  return 'http://localhost:3000';
+  return 'http://localhost:3000/v1';
 }

@@ -59,7 +59,7 @@ app.use('/api/auth', (req, res, next) => {
 app.use('/api/admin', requireAuth, requireAdmin, adminRoutes);
 
 // AI Proxy (requires auth)
-app.use(['/v1', '/api/v1', '/messages'], requireAuth, proxyRoutes);
+app.use(['/v1', '/api/v1', '/v1/v1', '/messages'], requireAuth, proxyRoutes);
 
 // ─── Health Check ────────────────────────────────────────
 app.get('/api/health', (req, res) => {
