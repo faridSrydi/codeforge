@@ -480,6 +480,13 @@ STATE MACHINE DIRECTIVES:
             }
           }
 
+          if (tc.name === 'Write') {
+            // Guarantee content is always a valid string (never undefined)
+            if (typeof tc.input.content !== 'string') {
+              tc.input.content = tc.input.code || tc.input.text || tc.input.file_content || tc.input.body || '';
+            }
+          }
+
           // Skip dummy files like 'newfile.txt' if no meaningful content
           if (tc.input.file_path && tc.input.file_path.includes('newfile.txt') && (!tc.input.content || tc.input.content.length < 5)) {
             continue;

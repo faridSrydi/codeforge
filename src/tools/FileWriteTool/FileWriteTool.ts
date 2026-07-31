@@ -150,6 +150,7 @@ export const FileWriteTool = buildTool({
     _,
     parentMessage,
   ) {
+    const safeContent = typeof content === 'string' ? content : (content ? String(content) : '')
     const fullFilePath = expandPath(file_path)
     const dir = dirname(fullFilePath)
 
@@ -222,7 +223,7 @@ export const FileWriteTool = buildTool({
     // the old file's line endings (or sampled the repo via ripgrep for new
     // files), which silently corrupted e.g. bash scripts with \r on Linux when
     // overwriting a CRLF file or when binaries in cwd poisoned the repo sample.
-    writeTextContent(fullFilePath, content, enc, 'LF')
+    writeTextContent(fullFilePath, safeContent, enc, 'LF')
 
     // Notify LSP servers about file modification (didChange) and save (didSave)
     const lspManager = getLspServerManager()
