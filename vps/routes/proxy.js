@@ -3,17 +3,14 @@ import { getUserById, getUserDailyRequestCount, logRequest } from '../db.js';
 
 const router = Router();
 
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://ollama:11434';
 const DEFAULT_MODEL = process.env.DEFAULT_MODEL || 'qwen2.5-coder:14b';
 
 /**
- * POST /v1/messages
+ * POST /v1/messages, /v1/beta/messages
  * Anthropic-compatible Messages API proxy → Ollama
- *
- * Accepts Anthropic SDK format and translates to Ollama's /api/chat format,
- * then translates the response back to Anthropic format.
  */
-router.post('/messages', async (req, res) => {
+router.post(['/messages', '/beta/messages', '/'], async (req, res) => {
   const startTime = Date.now();
 
   try {
