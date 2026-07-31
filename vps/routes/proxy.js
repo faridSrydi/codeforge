@@ -472,33 +472,27 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
 
       let blockIndex = 0;
 
-      // Emit text content block
-      if (ollamaData.message?.content) {
-        res.write(`event: content_block_start\ndata: ${JSON.stringify({ type: 'content_block_start', index: blockIndex, content_block: { type: 'text', text: '' } })}\n\n`);
-
-        // Stream text in chunks for natural feel
-        const fullText = ollamaData.message.content;
-        const chunkSize = 20;
-        for (let i = 0; i < fullText.length; i += chunkSize) {
-          const textChunk = fullText.substring(i, i + chunkSize);
-          res.write(`event: content_block_delta\ndata: ${JSON.stringify({ type: 'content_block_delta', index: blockIndex, delta: { type: 'text_delta', text: textChunk } })}\n\n`);
-        }
-        res.write(`event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: blockIndex })}\n\n`);
-        blockIndex++;
-      }
-
-      // Emit tool_use blocks
-      if (ollamaData.message?.tool_calls && Array.isArray(ollamaData.message.tool_calls)) {
-        for (const tc of ollamaData.message.tool_calls) {
-          const toolUseId = `toolu_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      // Emit contentBlocks via SSE (uses processed/parsed blocks, NOT raw Ollama response)
+      for (const block of contentBlocks) {
+        if (block.type === 'text') {
+          res.write(`event: content_block_start\ndata: ${JSON.stringify({ type: 'content_block_start', index: blockIndex, content_block: { type: 'text', text: '' } })}\n\n`);
+          // Stream text in chunks for natural feel
+          const chunkSize = 20;
+          for (let i = 0; i < block.text.length; i += chunkSize) {
+            const textChunk = block.text.substring(i, i + chunkSize);
+            res.write(`event: content_block_delta\ndata: ${JSON.stringify({ type: 'content_block_delta', index: blockIndex, delta: { type: 'text_delta', text: textChunk } })}\n\n`);
+          }
+          res.write(`event: content_block_stop\ndata: ${JSON.stringify({ type: 'content_block_stop', index: blockIndex })}\n\n`);
+          blockIndex++;
+        } else if (block.type === 'tool_use') {
           res.write(`event: content_block_start\ndata: ${JSON.stringify({
             type: 'content_block_start',
             index: blockIndex,
-            content_block: { type: 'tool_use', id: toolUseId, name: tc.function.name, input: {} }
+            content_block: { type: 'tool_use', id: block.id, name: block.name, input: {} }
           })}\n\n`);
 
           // Send input as input_json_delta
-          const inputStr = JSON.stringify(tc.function.arguments || {});
+          const inputStr = JSON.stringify(block.input || {});
           res.write(`event: content_block_delta\ndata: ${JSON.stringify({
             type: 'content_block_delta',
             index: blockIndex,
