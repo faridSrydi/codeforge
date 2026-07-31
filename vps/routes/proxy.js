@@ -133,7 +133,11 @@ router.post('/messages', async (req, res) => {
 
         if (!ollamaRes.ok) {
           const errorText = await ollamaRes.text();
-          res.write(`event: error\ndata: ${JSON.stringify({ type: 'error', error: { type: 'api_error', message: `Ollama error: ${errorText}` } })}\n\n`);
+          console.error('[Ollama API Error]', ollamaRes.status, errorText);
+          const errorMsg = errorText.includes('not found')
+            ? `AI Model "${ollamaModel}" is currently downloading/loading on VPS. Please wait a moment or run on VPS: docker exec -d codeforge-ollama ollama pull ${ollamaModel}`
+            : `Ollama error: ${errorText}`;
+          res.write(`event: error\ndata: ${JSON.stringify({ type: 'error', error: { type: 'api_error', message: errorMsg } })}\n\n`);
           res.end();
           return;
         }
@@ -232,10 +236,14 @@ router.post('/messages', async (req, res) => {
 
     if (!ollamaRes.ok) {
       const errorText = await ollamaRes.text();
+      console.error('[Ollama API Error]', ollamaRes.status, errorText);
+      const errorMsg = errorText.includes('not found')
+        ? `AI Model "${ollamaModel}" is currently downloading/loading on VPS. Please wait a moment or run on VPS: docker exec -d codeforge-ollama ollama pull ${ollamaModel}`
+        : `AI model error: ${errorText}`;
       logRequest({ userId: req.user.id, model: ollamaModel, durationMs: Date.now() - startTime, status: 'error' });
-      return res.status(502).json({
+      return res.status(400).json({
         type: 'error',
-        error: { type: 'api_error', message: `AI model error: ${errorText}` }
+        error: { type: 'api_error', message: errorMsg }
       });
     }
 
