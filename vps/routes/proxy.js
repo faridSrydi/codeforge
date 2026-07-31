@@ -48,8 +48,12 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
       });
     }
 
+    // Filter to only essential tools — too many tools confuses smaller models
+    const ESSENTIAL_TOOLS = new Set(['Write', 'Read', 'Edit', 'Bash']);
+    const filteredTools = Array.isArray(tools) ? tools.filter(t => ESSENTIAL_TOOLS.has(t.name)) : [];
+
     // Convert Anthropic tools → Ollama format
-    const ollamaTools = Array.isArray(tools) && tools.length > 0 ? tools.map(t => ({
+    const ollamaTools = filteredTools.length > 0 ? filteredTools.map(t => ({
       type: 'function',
       function: {
         name: t.name,
@@ -310,13 +314,20 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
       const text = ollamaData.message.content;
       console.log('[Proxy Fallback] Raw response first 500 chars:', text.substring(0, 500));
 
-      const knownTools = new Set(['Agent', 'Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Skill', 'ToolSearch', 'Write']);
+      // Case-insensitive tool name mapping → correct casing
+      const toolNameMap = {};
+      for (const t of (filteredTools || [])) {
+        toolNameMap[t.name.toLowerCase()] = t.name;
+      }
+      // Also add all known tools
+      for (const n of ['Write', 'Read', 'Edit', 'Bash', 'Glob', 'Grep', 'Agent', 'Skill', 'ToolSearch']) {
+        toolNameMap[n.toLowerCase()] = n;
+      }
+
       let parsedToolCalls = [];
 
       // STRATEGY 1: Parse JSON tool calls from text
-      // Try to find JSON objects with "name" and "arguments" fields
       try {
-        // Extract JSON from fenced code blocks first
         const jsonBlocks = [];
         const jsonFenceRegex = /```(?:json)?\s*\n([\s\S]*?)```/g;
         let jm;
@@ -334,21 +345,21 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
           try {
             const parsed = JSON.parse(jsonStr);
 
-            // Single tool call object: {"name":"Write","arguments":{...}}
-            if (parsed.name && knownTools.has(parsed.name) && parsed.arguments) {
-              parsedToolCalls.push({ name: parsed.name, input: parsed.arguments });
-            }
-            // Array of tool calls: [{"name":"Write",...}, {"name":"Write",...}]
-            else if (Array.isArray(parsed)) {
-              for (const item of parsed) {
-                if (item.name && knownTools.has(item.name) && item.arguments) {
-                  parsedToolCalls.push({ name: item.name, input: item.arguments });
+            const tryAdd = (obj) => {
+              if (obj.name && obj.arguments) {
+                const correctName = toolNameMap[obj.name.toLowerCase()];
+                if (correctName) {
+                  parsedToolCalls.push({ name: correctName, input: obj.arguments });
                 }
               }
+            };
+
+            if (Array.isArray(parsed)) {
+              for (const item of parsed) tryAdd(item);
+            } else {
+              tryAdd(parsed);
             }
-          } catch (e) {
-            // Not valid JSON, skip
-          }
+          } catch (e) { /* not valid JSON */ }
         }
       } catch (e) {
         console.log('[Proxy Fallback] JSON parsing error:', e.message);
