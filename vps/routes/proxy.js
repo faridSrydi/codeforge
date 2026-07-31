@@ -92,8 +92,9 @@ When asked to create files, respond ONLY with a JSON tool call like this:
 
 Rules:
 - ALWAYS use the Write tool to create files. NEVER output tutorial text.
-- Use ABSOLUTE file paths starting with the working directory${workingDir ? ` (${workingDir})` : ''}.
-- NEVER use placeholder paths like "/path/to/your/..." — use the REAL working directory.
+- Use ABSOLUTE file paths for file_path starting with the working directory${workingDir ? ` (${workingDir})` : ''}.
+- Inside file CONTENT (HTML/CSS/JS), ALWAYS use RELATIVE PATHS for links/scripts (e.g. href="styles.css" or src="script.js"). NEVER write "/path/to/your/..." in content.
+- When creating a website/project, ALWAYS create ALL files (HTML, CSS, JS) together in your response.
 - NEVER say "saya tidak bisa". You CAN and MUST create files directly.
 
 `;
@@ -389,14 +390,20 @@ Rules:
         // Successfully parsed tool calls from text!
         // Fix placeholder paths in tool call inputs
         for (const tc of parsedToolCalls) {
-          if (tc.input && tc.input.file_path && workingDir) {
-            const fp = tc.input.file_path;
-            // Replace placeholder paths with real working directory
-            if (fp.startsWith('/path/to/') || fp.startsWith('/absolute/path') || fp.includes('/your/')) {
-              // Extract just the filename from the placeholder path
-              const fileName = fp.split('/').pop();
-              tc.input.file_path = `${workingDir}/${fileName}`;
-              console.log('[Proxy Fallback] Fixed path:', fp, '->', tc.input.file_path);
+          if (tc.input) {
+            if (tc.input.file_path && workingDir) {
+              const fp = tc.input.file_path;
+              // Replace placeholder paths with real working directory
+              if (fp.startsWith('/path/to/') || fp.startsWith('/absolute/path') || fp.includes('/your/')) {
+                const fileName = fp.split('/').pop();
+                tc.input.file_path = `${workingDir}/${fileName}`;
+                console.log('[Proxy Fallback] Fixed path:', fp, '->', tc.input.file_path);
+              }
+            }
+
+            // Clean up any dummy paths inside file content (e.g. href="/path/to/your/portfolio/styles.css" -> href="styles.css")
+            if (typeof tc.input.content === 'string') {
+              tc.input.content = tc.input.content.replace(/(?:href|src)=["'](?:\/path\/to\/[^\/]+\/|^\/)([^"']+)["']/g, '$1');
             }
           }
         }
