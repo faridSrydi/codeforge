@@ -409,14 +409,43 @@ STATE MACHINE DIRECTIVES:
             const parsed = JSON.parse(jsonStr);
 
             const tryAdd = (obj) => {
-              if (obj.skill || (obj.name && (obj.name.toLowerCase() === 'skill' || obj.name.toLowerCase() === 'agent'))) {
-                console.log('[Proxy Fallback] Ignored meta tool call:', obj.skill || obj.name);
+              if (!obj || typeof obj !== 'object') return;
+
+              // 1. Check if object contains a nested actions array (e.g. Agent tool pattern)
+              const actions = obj.actions || obj.arguments?.actions;
+              if (Array.isArray(actions) && actions.length > 0) {
+                console.log('[Proxy Fallback] Unpacking nested actions array, count:', actions.length);
+                for (const action of actions) {
+                  tryAdd(action);
+                }
                 return;
               }
-              if (obj.name && obj.arguments) {
-                const correctName = toolNameMap[obj.name.toLowerCase()];
-                if (correctName) {
-                  parsedToolCalls.push({ name: correctName, input: obj.arguments });
+
+              // 2. Direct action/tool object with function_name / parameters or name / arguments
+              const fnName = obj.function_name || obj.name || obj.tool;
+              const params = obj.parameters || obj.arguments || obj.input;
+
+              if (fnName && params && typeof params === 'object') {
+                const normName = toolNameMap[fnName.toLowerCase()] || 'Write';
+                parsedToolCalls.push({ name: normName, input: params });
+                return;
+              }
+
+              // 3. Standard {"name": "Write", "arguments": {...}}
+              if (obj.name && obj.arguments && typeof obj.arguments === 'object') {
+                const correctName = toolNameMap[obj.name.toLowerCase()] || 'Write';
+                parsedToolCalls.push({ name: correctName, input: obj.arguments });
+                return;
+              }
+
+              // 4. Recursive fallback scan: if JSON string values contain HTML/CSS code, extract as Write
+              for (const [key, val] of Object.entries(obj)) {
+                if (typeof val === 'string' && (val.includes('<!DOCTYPE') || val.includes('<html') || (val.includes('body {') && val.includes('}')))) {
+                  console.log('[Proxy Fallback] Extracted embedded HTML/CSS content from JSON key:', key);
+                  parsedToolCalls.push({
+                    name: 'Write',
+                    input: { file_path: 'index.html', content: val }
+                  });
                 }
               }
             };
