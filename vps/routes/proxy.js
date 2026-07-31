@@ -302,87 +302,104 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
         });
       }
       stopReason = 'tool_use';
-      console.log('[Proxy Debug] Native tool calls detected:', ollamaData.message.tool_calls.length);
+      console.log('[Proxy] Native tool calls detected:', ollamaData.message.tool_calls.length);
     } else if (hasTools && ollamaData.message?.content) {
       // ── FALLBACK PARSER ──
       // Model generated text instead of calling tools.
-      // Parse code blocks from the text and convert them into Write tool_use calls.
+      // Parse code blocks from text and convert them into Write tool_use calls.
       const text = ollamaData.message.content;
-      const codeBlockRegex = /(?:(?:^|\n)(?:#{1,4}\s+)?(?:\*{0,2})?(?:`)?([a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+)(?:`)?(?:\*{0,2})?(?:\s*[:：]?)?\s*\n+)?```[\w]*\n([\s\S]*?)```/g;
-      const fileExtRegex = /\b([a-zA-Z0-9_\-]+\.(html|css|js|jsx|ts|tsx|py|json|md|txt|yaml|yml|xml|php|rb|go|rs|java|c|cpp|h|hpp|sh|bat|ps1|sql|vue|svelte|astro))\b/i;
-      
-      const extractedFiles = [];
-      let match;
-      
-      while ((match = codeBlockRegex.exec(text)) !== null) {
-        let fileName = match[1];
-        const codeContent = match[2];
-        
-        if (!codeContent || codeContent.trim().length === 0) continue;
-        
-        // If no filename was captured from the line before, search the surrounding text
-        if (!fileName || !fileExtRegex.test(fileName)) {
-          // Search backwards from the code block position for a filename
-          const textBefore = text.substring(Math.max(0, match.index - 200), match.index);
-          const fileMatch = textBefore.match(/(?:file|nama|name|buat|create|save|simpan|tulis|write)?[:\s]*(?:`)?([a-zA-Z0-9_\-\/]+\.(html|css|js|jsx|ts|tsx|py|json|txt|yaml|yml|xml|php|vue|svelte))(?:`)?/i);
-          if (fileMatch) {
-            fileName = fileMatch[1];
-          }
-        }
-        
-        // Detect file type from code block language tag if still no filename
-        if (!fileName || !fileExtRegex.test(fileName)) {
-          const langMatch = text.substring(match.index).match(/```(\w+)/);
-          const langMap = { html: 'index.html', css: 'style.css', javascript: 'script.js', js: 'script.js', python: 'main.py', typescript: 'index.ts', json: 'data.json', php: 'index.php' };
-          if (langMatch && langMap[langMatch[1].toLowerCase()]) {
-            fileName = langMap[langMatch[1].toLowerCase()];
-            // Avoid duplicate default names
-            const existing = extractedFiles.find(f => f.name === fileName);
-            if (existing) {
-              const count = extractedFiles.filter(f => f.name.startsWith(langMatch[1])).length;
-              const ext = fileName.split('.').pop();
-              const base = fileName.replace(`.${ext}`, '');
-              fileName = `${base}${count + 1}.${ext}`;
-            }
-          }
-        }
-        
-        if (fileName && codeContent.trim().length > 10) {
-          extractedFiles.push({ name: fileName.replace(/^\/+/, ''), content: codeContent.trimEnd() });
+      console.log('[Proxy Fallback] Raw response first 500 chars:', text.substring(0, 500));
+
+      // STEP 1: Find all fenced code blocks with simple regex
+      const codeBlocks = [];
+      const fencedRegex = /```(\w*)\n([\s\S]*?)```/g;
+      let m;
+      while ((m = fencedRegex.exec(text)) !== null) {
+        if (m[2] && m[2].trim().length > 10) {
+          codeBlocks.push({ lang: m[1] || '', code: m[2], pos: m.index });
         }
       }
-      
-      console.log('[Proxy Debug] FALLBACK PARSER: extracted', extractedFiles.length, 'files:', extractedFiles.map(f => f.name).join(', '));
-      
-      if (extractedFiles.length > 0) {
-        // Get working directory from the original messages (look for cwd info in system prompt)
-        let workingDir = '';
-        const cwdMatch = systemText.match(/working directory[:\s]+([^\n]+)/i) || systemText.match(/cwd[:\s]+([^\n]+)/i) || systemText.match(/(?:Current working directory|Working Dir)[:\s]+([^\n]+)/i);
-        if (cwdMatch) {
-          workingDir = cwdMatch[1].trim().replace(/\\/g, '/');
-          if (!workingDir.endsWith('/')) workingDir += '/';
+
+      console.log('[Proxy Fallback] Found', codeBlocks.length, 'fenced code blocks');
+
+      // STEP 2: For each code block, find the filename from surrounding text
+      const fileExtPattern = /([a-zA-Z0-9_\-\/]+\.(html|css|js|jsx|ts|tsx|py|json|txt|yaml|yml|xml|php|vue|svelte|sh|bat))/gi;
+      const langToDefault = { html: 'index.html', css: 'styles.css', javascript: 'script.js', js: 'script.js', python: 'main.py', typescript: 'index.ts', json: 'data.json', php: 'index.php', sh: 'script.sh', bat: 'script.bat' };
+      const usedNames = new Set();
+
+      const extractedFiles = [];
+
+      for (const block of codeBlocks) {
+        let fileName = null;
+
+        // Search the 400 characters before the code block for a filename
+        const searchStart = Math.max(0, block.pos - 400);
+        const textBefore = text.substring(searchStart, block.pos);
+
+        // Find ALL filename matches in the text before, take the LAST one (closest to code block)
+        const allMatches = [...textBefore.matchAll(fileExtPattern)];
+        if (allMatches.length > 0) {
+          fileName = allMatches[allMatches.length - 1][1];
+          // Clean up path — just keep the basename
+          if (fileName.includes('/')) {
+            fileName = fileName.split('/').pop();
+          }
         }
-        
-        // Add brief description text
+
+        // Fallback: use language tag to determine default filename
+        if (!fileName && block.lang && langToDefault[block.lang.toLowerCase()]) {
+          fileName = langToDefault[block.lang.toLowerCase()];
+        }
+
+        // Fallback: detect from content
+        if (!fileName) {
+          if (block.code.includes('<!DOCTYPE') || block.code.includes('<html')) fileName = 'index.html';
+          else if (block.code.match(/^[\s\S]*\{[\s\S]*\}/) && block.code.includes(':')) fileName = 'styles.css';
+          else if (block.code.includes('document.') || block.code.includes('function ') || block.code.includes('const ') || block.code.includes('addEventListener')) fileName = 'script.js';
+        }
+
+        // Deduplicate names
+        if (fileName && usedNames.has(fileName)) {
+          const ext = fileName.split('.').pop();
+          const base = fileName.replace(`.${ext}`, '');
+          let counter = 2;
+          while (usedNames.has(`${base}${counter}.${ext}`)) counter++;
+          fileName = `${base}${counter}.${ext}`;
+        }
+
+        if (fileName) {
+          usedNames.add(fileName);
+          extractedFiles.push({ name: fileName, content: block.code.trimEnd() });
+        }
+      }
+
+      console.log('[Proxy Fallback] Extracted files:', extractedFiles.length, extractedFiles.map(f => f.name).join(', '));
+
+      if (extractedFiles.length > 0) {
+        // Get working directory from system prompt
+        let workingDir = '';
+        const cwdMatch = systemText.match(/(?:working directory|cwd|Working Dir|project workspace)[:\s]+([^\n,]+)/i);
+        if (cwdMatch) {
+          workingDir = cwdMatch[1].trim().replace(/\\/g, '/').replace(/\/+$/, '') + '/';
+        }
+
+        // Brief description
         const fileNames = extractedFiles.map(f => f.name).join(', ');
-        contentBlocks.push({ type: 'text', text: `I'll create the following files for you: ${fileNames}` });
-        
-        // Generate Write tool_use blocks for each file
+        contentBlocks.push({ type: 'text', text: `Creating files: ${fileNames}` });
+
+        // Generate Write tool_use blocks
         for (const file of extractedFiles) {
           const filePath = workingDir ? `${workingDir}${file.name}` : file.name;
           contentBlocks.push({
             type: 'tool_use',
             id: `toolu_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
             name: 'Write',
-            input: {
-              file_path: filePath,
-              content: file.content
-            }
+            input: { file_path: filePath, content: file.content }
           });
         }
         stopReason = 'tool_use';
       } else {
-        // No files extracted, just forward the text as-is
+        // No files extracted — forward text as-is
         contentBlocks.push({ type: 'text', text: text });
       }
     } else if (ollamaData.message?.content) {
