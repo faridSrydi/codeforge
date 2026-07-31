@@ -80,22 +80,23 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
     console.log('[Proxy] Detected working directory:', workingDir || '(not found)');
 
     // PREPEND agent directive with REAL working directory
-    const examplePath = workingDir ? `${workingDir}/index.html` : '/absolute/path/to/file.html';
-    const agentDirective = `CRITICAL INSTRUCTION — YOU ARE AN AUTONOMOUS CODING AGENT:
-You have tools: [${availableToolNames}]. You MUST respond ONLY with JSON tool calls. NEVER give text tutorials.
-${workingDir ? `The user's working directory is: ${workingDir}` : ''}
+    const examplePath = workingDir ? `${workingDir}/index.html` : 'C:/path/to/project/index.html';
+    const agentDirective = `CRITICAL AGENT INSTRUCTION — YOU ARE AN AUTONOMOUS EXPERT SOFTWARE ENGINEER:
+You are CodeForge AI working inside the user's project folder.
+Available tools: [${availableToolNames}]. You MUST respond ONLY with JSON tool calls. NEVER write text tutorials.
+${workingDir ? `Project Working Directory: ${workingDir}` : ''}
 
-When asked to create files, respond ONLY with a JSON tool call like this:
+When asked to create or build any website/app/feature, output JSON tool calls for ALL files needed (HTML, CSS, JS, etc.) in ONE response:
 \`\`\`json
-{"name": "Write", "arguments": {"file_path": "${examplePath}", "content": "<file content here>"}}
+{"name": "Write", "arguments": {"file_path": "${examplePath}", "content": "<complete file content here>"}}
 \`\`\`
 
-Rules:
-- ALWAYS use the Write tool to create files. NEVER output tutorial text.
-- Use ABSOLUTE file paths for file_path starting with the working directory${workingDir ? ` (${workingDir})` : ''}.
-- Inside file CONTENT (HTML/CSS/JS), ALWAYS use RELATIVE PATHS for links/scripts (e.g. href="styles.css" or src="script.js"). NEVER write "/path/to/your/..." in content.
-- When creating a website/project, ALWAYS create ALL files (HTML, CSS, JS) together in your response.
-- NEVER say "saya tidak bisa". You CAN and MUST create files directly.
+OPERATING RULES:
+1. ALWAYS use the Write tool with full complete file content to create or update files.
+2. ALWAYS generate ALL required project files (e.g. index.html, styles.css, script.js) together in your response.
+3. Use absolute file paths starting with the working directory: ${workingDir || 'workspace'}.
+4. Inside HTML/CSS/JS code, use clean relative filenames for links (e.g. href="styles.css", src="script.js").
+5. NEVER say "saya tidak bisa" or write markdown instructions. EXECUTE THE TOOL CALLS DIRECTLY.
 
 `;
 
@@ -388,29 +389,53 @@ Rules:
 
       if (parsedToolCalls.length > 0) {
         // Successfully parsed tool calls from text!
-        // Fix placeholder paths in tool call inputs
-        for (const tc of parsedToolCalls) {
-          if (tc.input) {
-            if (tc.input.file_path && workingDir) {
-              const fp = tc.input.file_path;
-              // Replace placeholder paths with real working directory
-              if (fp.startsWith('/path/to/') || fp.startsWith('/absolute/path') || fp.includes('/your/')) {
-                const fileName = fp.split('/').pop();
-                tc.input.file_path = `${workingDir}/${fileName}`;
-                console.log('[Proxy Fallback] Fixed path:', fp, '->', tc.input.file_path);
-              }
-            }
+        // Sanitize and fix tool call inputs
+        const sanitizedToolCalls = [];
 
-            // Clean up any dummy paths inside file content (e.g. href="/path/to/your/portfolio/styles.css" -> href="styles.css")
-            if (typeof tc.input.content === 'string') {
-              tc.input.content = tc.input.content.replace(/(?:href|src)=["'](?:\/path\/to\/[^\/]+\/|^\/)([^"']+)["']/g, '$1');
+        for (const tc of parsedToolCalls) {
+          if (!tc.input) continue;
+
+          // Convert 'Edit' calls -> 'Write' calls if content is provided (Edit tool often fails on LLMs)
+          if (tc.name === 'Edit') {
+            tc.name = 'Write';
+            if (!tc.input.content && tc.input.new_string) {
+              tc.input.content = tc.input.new_string;
             }
           }
+
+          // Skip dummy files like 'newfile.txt' if no meaningful content
+          if (tc.input.file_path && tc.input.file_path.includes('newfile.txt') && (!tc.input.content || tc.input.content.length < 5)) {
+            continue;
+          }
+
+          if (tc.input.file_path) {
+            let fp = tc.input.file_path;
+
+            // Replace placeholder paths with real working directory
+            if (fp.startsWith('/path/to/') || fp.startsWith('/absolute/path') || fp.includes('/your/')) {
+              const fileName = fp.split('/').pop();
+              fp = workingDir ? `${workingDir}/${fileName}` : fileName;
+            }
+
+            // Ensure path is absolute using workingDir if it's a relative path
+            if (workingDir && !fp.startsWith('/') && !fp.match(/^[a-zA-Z]:/)) {
+              fp = `${workingDir}/${fp.replace(/^\/+/, '')}`;
+            }
+
+            tc.input.file_path = fp;
+          }
+
+          // Clean up dummy asset paths inside file content (e.g. href="/path/to/your/portfolio/styles.css" -> href="styles.css")
+          if (typeof tc.input.content === 'string') {
+            tc.input.content = tc.input.content.replace(/(?:href|src)=["'](?:\/path\/to\/[^\/]+\/|^\/)([^"']+)["']/g, '$1');
+          }
+
+          sanitizedToolCalls.push(tc);
         }
 
-        contentBlocks.push({ type: 'text', text: `Creating files...` });
+        contentBlocks.push({ type: 'text', text: `Creating project files...` });
 
-        for (const tc of parsedToolCalls) {
+        for (const tc of sanitizedToolCalls) {
           contentBlocks.push({
             type: 'tool_use',
             id: `toolu_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
