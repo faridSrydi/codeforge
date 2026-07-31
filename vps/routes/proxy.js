@@ -48,19 +48,28 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
       });
     }
 
-    // Filter to only essential tools — too many tools confuses smaller models
-    const ESSENTIAL_TOOLS = new Set(['Write', 'Read', 'Edit', 'Bash']);
-    const filteredTools = Array.isArray(tools) ? tools.filter(t => ESSENTIAL_TOOLS.has(t.name)) : [];
-
     // Convert Anthropic tools → Ollama format
-    const ollamaTools = filteredTools.length > 0 ? filteredTools.map(t => ({
+    const rawTools = Array.isArray(tools) && tools.length > 0 ? tools : [];
+
+    // Map all provided tools cleanly to Ollama format
+    let ollamaTools = rawTools.map(t => ({
       type: 'function',
       function: {
         name: t.name,
         description: t.description || '',
         parameters: t.input_schema || { type: 'object', properties: {} }
       }
-    })) : undefined;
+    }));
+
+    // If no tools were passed, provide standard default tools so AI is ALWAYS an agent
+    if (ollamaTools.length === 0) {
+      ollamaTools = [
+        { type: 'function', function: { name: 'Write', description: 'Write a file to disk', parameters: { type: 'object', properties: { file_path: { type: 'string' }, content: { type: 'string' } }, required: ['file_path', 'content'] } } },
+        { type: 'function', function: { name: 'Read', description: 'Read a file from disk', parameters: { type: 'object', properties: { file_path: { type: 'string' } }, required: ['file_path'] } } },
+        { type: 'function', function: { name: 'Edit', description: 'Edit a file on disk', parameters: { type: 'object', properties: { file_path: { type: 'string' }, content: { type: 'string' } }, required: ['file_path', 'content'] } } },
+        { type: 'function', function: { name: 'Bash', description: 'Run a shell command', parameters: { type: 'object', properties: { command: { type: 'string' } }, required: ['command'] } } }
+      ];
+    }
 
     // ── Convert Anthropic messages → Ollama format ──
     const ollamaMessages = [];
@@ -361,13 +370,16 @@ STATE MACHINE DIRECTIVES:
       console.log('[Proxy Fallback] Raw response first 500 chars:', text.substring(0, 500));
 
       // Case-insensitive tool name mapping → correct casing
-      const toolNameMap = {};
-      for (const t of (filteredTools || [])) {
-        toolNameMap[t.name.toLowerCase()] = t.name;
-      }
-      // Also add all known tools
-      for (const n of ['Write', 'Read', 'Edit', 'Bash', 'Glob', 'Grep', 'Agent', 'Skill', 'ToolSearch']) {
-        toolNameMap[n.toLowerCase()] = n;
+      const toolNameMap = {
+        'write': 'Write', 'write_file': 'Write', 'writefile': 'Write', 'filewrite': 'Write', 'file_write': 'Write',
+        'read': 'Read', 'read_file': 'Read', 'readfile': 'Read', 'fileread': 'Read', 'file_read': 'Read',
+        'edit': 'Write', 'edit_file': 'Write', 'editfile': 'Write', 'fileedit': 'Write', 'file_edit': 'Write',
+        'bash': 'Bash', 'bash_tool': 'Bash', 'shell': 'Bash', 'terminal': 'Bash'
+      };
+      for (const t of (ollamaTools || [])) {
+        if (t.function?.name) {
+          toolNameMap[t.function.name.toLowerCase()] = t.function.name;
+        }
       }
 
       let parsedToolCalls = [];
