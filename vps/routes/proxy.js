@@ -488,15 +488,12 @@ STATE MACHINE DIRECTIVES:
           if (tc.input.file_path) {
             let fp = tc.input.file_path;
 
-            // Replace placeholder paths with real working directory
-            if (fp.startsWith('/path/to/') || fp.startsWith('/absolute/path') || fp.includes('/your/')) {
-              const fileName = fp.split('/').pop();
-              fp = workingDir ? `${workingDir}/${fileName}` : fileName;
-            }
-
-            // Ensure path is absolute using workingDir if it's a relative path
-            if (workingDir && !fp.startsWith('/') && !fp.match(/^[a-zA-Z]:/)) {
-              fp = `${workingDir}/${fp.replace(/^\/+/, '')}`;
+            // Extract clean basename (e.g. index.html) for local project files to prevent OS path separator errors
+            if (fp.includes('/') || fp.includes('\\')) {
+              const baseName = fp.split(/[/\\]/).pop();
+              if (baseName && baseName.includes('.')) {
+                fp = baseName;
+              }
             }
 
             tc.input.file_path = fp;
@@ -603,8 +600,8 @@ STATE MACHINE DIRECTIVES:
 
           if (isCreationRequest) {
             console.log('[Proxy Fallback] Automatic template generator triggered for prompt:', userPrompt);
-            const htmlPath = workingDir ? `${workingDir}/index.html` : 'index.html';
-            const cssPath = workingDir ? `${workingDir}/styles.css` : 'styles.css';
+            const htmlPath = 'index.html';
+            const cssPath = 'styles.css';
 
             const defaultHtml = `<!DOCTYPE html>
 <html lang="id">
