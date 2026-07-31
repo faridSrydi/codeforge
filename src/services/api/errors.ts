@@ -463,8 +463,6 @@ export function getAssistantMessageFromError(
     })
   }
 
-import { getVPSCredentials } from '../../utils/vpsAuthStorage.js'
-
   if (getVPSCredentials()) {
     return createAssistantAPIErrorMessage({
       content: `VPS AI Error: ${error instanceof Error ? error.message : String(error)}`,
