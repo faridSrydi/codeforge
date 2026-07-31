@@ -68,13 +68,13 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
         ? system.map(b => b.text || '').join('\n')
         : '';
 
-    if (ollamaTools && ollamaTools.length > 0) {
-      systemText += `\n\nCRITICAL AGENT INSTRUCTION: You are an autonomous coding agent with file-writing tools. When the user asks to create, update, or write files (such as index.html, style.css, etc.), YOU MUST CALL THE AVAILABLE FILE WRITING TOOL (such as FileWrite, WriteFile, write_to_file, etc.) to write the files directly to disk. DO NOT print text telling the user to copy-paste or save files manually. CALL THE TOOLS DIRECTLY.`;
-    }
+    systemText += `\n\nAUTONOMOUS AGENT OPERATING DIRECTIVES:
+1. You are CodeForge AI, an autonomous software engineer working directly in the user's project workspace directory.
+2. Whenever the user requests any task (such as "buatkan website portfolio", "tambahkan navbar", "buat landing page"), YOU MUST IMMEDIATELY CALL TOOLS to create or write the files directly to disk.
+3. NEVER output code blocks or text telling the user to copy/paste or save files manually.
+4. Take full autonomous initiative: automatically create all necessary project files (e.g. index.html, style.css, script.js) right away using your tools.`;
 
-    if (systemText) {
-      ollamaMessages.push({ role: 'system', content: systemText });
-    }
+    ollamaMessages.push({ role: 'system', content: systemText });
 
     // Convert messages
     for (const msg of messages) {
