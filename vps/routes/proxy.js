@@ -62,15 +62,18 @@ router.post(['/messages', '/v1/messages', '/beta/messages', '/'], async (req, re
     const ollamaMessages = [];
 
     // Add system prompt if provided
-    if (system) {
-      const systemText = typeof system === 'string'
-        ? system
-        : Array.isArray(system)
-          ? system.map(b => b.text || '').join('\n')
-          : '';
-      if (systemText) {
-        ollamaMessages.push({ role: 'system', content: systemText });
-      }
+    let systemText = typeof system === 'string'
+      ? system
+      : Array.isArray(system)
+        ? system.map(b => b.text || '').join('\n')
+        : '';
+
+    if (ollamaTools && ollamaTools.length > 0) {
+      systemText += `\n\nCRITICAL AGENT INSTRUCTION: You are an autonomous coding agent with file-writing tools. When the user asks to create, update, or write files (such as index.html, style.css, etc.), YOU MUST CALL THE AVAILABLE FILE WRITING TOOL (such as FileWrite, WriteFile, write_to_file, etc.) to write the files directly to disk. DO NOT print text telling the user to copy-paste or save files manually. CALL THE TOOLS DIRECTLY.`;
+    }
+
+    if (systemText) {
+      ollamaMessages.push({ role: 'system', content: systemText });
     }
 
     // Convert messages
