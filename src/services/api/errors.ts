@@ -20,6 +20,7 @@ import {
   getOauthAccountInfo,
   isClaudeAISubscriber,
 } from 'src/utils/auth.js'
+import { getVPSCredentials } from '../../utils/vpsAuthStorage.js'
 import {
   createAssistantAPIErrorMessage,
   NO_RESPONSE_REQUESTED,
@@ -459,6 +460,15 @@ export function getAssistantMessageFromError(
     return createAssistantAPIErrorMessage({
       content: CUSTOM_OFF_SWITCH_MESSAGE,
       error: 'rate_limit',
+    })
+  }
+
+import { getVPSCredentials } from '../../utils/vpsAuthStorage.js'
+
+  if (getVPSCredentials()) {
+    return createAssistantAPIErrorMessage({
+      content: `VPS AI Error: ${error instanceof Error ? error.message : String(error)}`,
+      error: 'unknown',
     })
   }
 
